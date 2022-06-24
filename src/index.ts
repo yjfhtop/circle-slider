@@ -1,4 +1,6 @@
 // 坐标
+import { mergeData } from '@/utils/dataHandle'
+
 export interface Coordinate {
     x: number
     y: number
@@ -31,18 +33,41 @@ export interface DragBtn {
     // 半径
     r: number
     // 背景颜色
-    bgc: number
+    bgc: string
+    // 选中后的颜色
+    activeBgc: string
+}
+
+// 数据的配置
+export interface DataConf {
+    min: number
+    max: number
+    // 滑块小的那一端的最大值
+    dragBtnSmallMax: number
+    // 滑块大的那一端的最小值
+    dragBtnBigMin: number
 }
 
 // 配置项
 export interface CircleSliderConf {
-    sAngle: number
-    eAngle: number
-    ringW: number
+    ringConf: RingConf
+    axisMark: AxisMark
+    dragBtn: DragBtn
+    dataConf: DataConf
+}
+
+// 用户传入
+export type CircleSliderConfUser = Partial<CircleSliderConf>
+
+const defConf = {
+    ringConf: {},
 }
 
 class CircleSlider {
-    constructor() {}
+    private conf: CircleSliderConf
+    constructor(conf: CircleSliderConfUser) {
+        // this.conf = mergeData()
+    }
     // get spanAngle () {
     //     return Math.abs(this.eAngle - this.sAngle)
     // }
