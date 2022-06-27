@@ -25,6 +25,7 @@ function angle(a, b) {
 const org = { x: 0, y: 0 }
 console.log(angle(org, { x: -1, y: -1 }))
 
+// 角度得 原上的点
 function jdyx(angle, r, org = { x: 0, y: 0 }) {
     const x1 = org.x + r * Math.cos((angle * Math.PI) / 180)
 

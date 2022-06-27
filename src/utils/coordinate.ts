@@ -26,3 +26,33 @@ export function dotAndDitRGetLineDot(
         y: dot1.y + y,
     }
 }
+
+export interface GetAngleConf {
+    sAngle: number
+    eAngle: number
+    sV: number
+    eV: number
+}
+
+// 值转角度
+export function value2Angle(v: number, conf: GetAngleConf) {
+    const addDiffAngle = Math.abs(conf.eAngle - conf.sAngle)
+    const allDiff = conf.eV - conf.sV
+    const valueDiff = v - conf.sV
+    return (valueDiff / allDiff) * addDiffAngle + conf.sAngle
+}
+
+// 角度得 原上的点
+export function angle2Coordinate(
+    angle: number,
+    r: number,
+    org = { x: 0, y: 0 }
+) {
+    const x1 = org.x + r * Math.cos((angle * Math.PI) / 180)
+
+    const y1 = org.y + r * Math.sin((angle * Math.PI) / 180)
+    return {
+        x: x1,
+        y: y1,
+    }
+}

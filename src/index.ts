@@ -1,5 +1,5 @@
 // 坐标
-import { angle2Radian, mergeData, value2Angle } from '@/utils/dataHandle'
+import { angle2Radian, mergeData } from '@/utils/dataHandle'
 import {
     createContainerEl,
     createHDCanvas,
@@ -12,8 +12,10 @@ import {
     drawCircular,
     drawRect,
     drawSector,
+    drawTxt,
     RectConfig,
 } from '@/utils/canvasDraw'
+import { angle2Coordinate, value2Angle } from './utils/coordinate'
 
 export interface Coordinate {
     x: number
@@ -47,8 +49,8 @@ export interface RingConf {
 export interface AxisMark {
     fontSize?: number
     fontColor?: string
-    // 步长
-    step?: number
+    // 与环的间隔距离
+    distance?: number
 }
 
 // 拖拽的 按钮样式
@@ -59,6 +61,7 @@ export interface DragBtn {
     bgc?: string
     // 选中后的颜色
     activeBgc?: string
+    activeBtn?: 's' | 'e'
 }
 
 // 数据的配置
@@ -71,6 +74,15 @@ export interface DataConf {
     dragBtnBigMin?: number
     // 当前的值
     value: number[]
+    // 步长, 暂时未使用
+    step?: number
+}
+
+export interface Grid {
+    left?: number
+    top?: number
+    right?: number
+    bottom?: number
 }
 
 // 配置项
@@ -80,6 +92,7 @@ export interface CircleSliderConf {
     dragBtn: Required<DragBtn>
     dataConf: Required<DataConf>
     el: HTMLElement | string
+    grid: Grid
 }
 
 // 用户传入
@@ -99,21 +112,29 @@ const defConf: CircleSliderConfUser = {
     },
     axisMark: {
         fontSize: 14,
-        fontColor: '#000',
-        step: 1,
+        fontColor: '#ccc',
+        distance: 10,
     },
     dragBtn: {
         // r: 5,
         bgc: '#ccc',
         activeBgc: '#0eb0c9',
+        activeBtn: 's',
     },
     dataConf: {
         min: 0,
         max: 10,
+        step: 1,
         // dragBtnBigMin: 5,
         // dragBtnSmallMax: 5,
     },
     el: '#circleSlider',
+    grid: {
+        left: 10,
+        right: 10,
+        top: 10,
+        bottom: 0,
+    },
 }
 
 export default class CircleSlider {
@@ -163,8 +184,14 @@ export default class CircleSlider {
         if (uC?.ringConf?.org === undefined) {
             // 默认为容器中心
             c.ringConf.org = {
-                x: Math.floor(this.containerWH.w / 2),
-                y: Math.floor(this.containerWH.h / 2),
+                x: Math.floor(
+                    c.grid.left +
+                        (this.containerWH.w - c.grid.left - c.grid.right) / 2
+                ),
+                y: Math.floor(
+                    c.grid.top +
+                        (this.containerWH.h - c.grid.top - c.grid.bottom) / 2
+                ),
             }
         }
         // 环的中心 e
@@ -172,10 +199,16 @@ export default class CircleSlider {
         // 环的半径 s
         if (uC?.ringConf?.r === undefined) {
             const yR = Math.floor(
-                c.ringConf.org.y - c.axisMark.fontSize - c.ringConf.ringW / 2
+                c.ringConf.org.y -
+                    c.axisMark.fontSize -
+                    c.ringConf.ringW / 2 -
+                    c.grid.top
             )
             const xR = Math.floor(
-                c.ringConf.org.x - c.axisMark.fontSize - c.ringConf.ringW / 2
+                c.ringConf.org.x -
+                    c.axisMark.fontSize -
+                    c.ringConf.ringW / 2 -
+                    c.grid.left
             )
             c.ringConf.r = Math.min(yR, xR)
         }
@@ -184,7 +217,9 @@ export default class CircleSlider {
 
         // 按钮的半径 s
         if (uC?.dragBtn?.r === undefined) {
-            c.dragBtn.r = Math.floor(c.ringConf.ringW / 2)
+            // 1.8倍大小
+            const baseR = Math.floor((c.ringConf.ringW / 2) * 1.8)
+            c.dragBtn.r = baseR
         }
         // 按钮的半径 e
 
@@ -226,6 +261,11 @@ export default class CircleSlider {
         }
         return target
     }
+    // 轴标到圆心的距离
+    get axisMarkR() {
+        const c = this.conf
+        return c.ringConf.r + c.ringConf.ringW / 2 + c.axisMark.distance
+    }
 
     // 绘制环
     drawRing() {
@@ -259,13 +299,111 @@ export default class CircleSlider {
             drawStyle: {
                 w: c.ringConf.ringW,
                 style: c.ringConf.activeBgc,
-                lineCap: 'round',
+                // lineCap: 'round',
             },
         })
+    }
+
+    // 绘制拖动的按钮
+    drawDragBtn() {
+        const c = this.conf
+        // 小值 按钮
+        const minC = angle2Coordinate(
+            this.nowValueAngle.sAngle,
+            c.ringConf.r,
+            c.ringConf.org
+        )
+        drawCircular(this.ctx, {
+            center: minC,
+            r: c.dragBtn.r,
+            drawStyle: {
+                style:
+                    c.dragBtn.activeBtn === 's'
+                        ? c.dragBtn.activeBgc
+                        : c.dragBtn.bgc,
+            },
+            drawType: 'full',
+        })
+        // 大值按钮
+        const maxC = angle2Coordinate(
+            this.nowValueAngle.eAngle,
+            c.ringConf.r,
+            c.ringConf.org
+        )
+        drawCircular(this.ctx, {
+            center: maxC,
+            r: c.dragBtn.r,
+            drawStyle: {
+                style:
+                    c.dragBtn.activeBtn === 'e'
+                        ? c.dragBtn.activeBgc
+                        : c.dragBtn.bgc,
+            },
+            drawType: 'full',
+        })
+    }
+
+    // 绘制轴标
+    drawAxisMark() {
+        const c = this.conf
+        const min = c.dataConf.min
+        const max = c.dataConf.max
+        const value2AngleConf = {
+            sAngle: c.ringConf.sAngle,
+            eAngle: c.ringConf.eAngle,
+            sV: c.dataConf.min,
+            eV: c.dataConf.max,
+        }
+        const axisMarkR = this.axisMarkR
+
+        function angleGetAlign(angle: number): CanvasTextAlign {
+            const useAngle = angle % 360
+            // 误差值
+            const errorNumber = 2
+            // center
+            if (
+                (useAngle >= 90 - errorNumber &&
+                    useAngle <= 90 + errorNumber) ||
+                (useAngle >= 270 - errorNumber && useAngle <= 270 + errorNumber)
+            ) {
+                return 'center'
+            }
+
+            if (useAngle > 90 && useAngle < 270) {
+                return 'right'
+            }
+            return 'left'
+        }
+
+        for (let i = min; i <= max; i++) {
+            //绘制每一个轴标
+            const txt = i + ''
+            const angle = value2Angle(i, value2AngleConf)
+            console.log(angle, 'angle')
+            // 文本的绘制坐标
+            const coordinate = angle2Coordinate(
+                angle,
+                axisMarkR,
+                c.ringConf.org
+            )
+            console.log(coordinate, 'coordinate')
+            drawTxt(this.ctx, {
+                coordinate: coordinate,
+                txt: txt,
+                fontSize: c.axisMark.fontSize,
+                drawType: 'full',
+                drawStyle: {
+                    style: c.axisMark.fontColor,
+                },
+                textAlign: angleGetAlign(angle),
+            })
+        }
     }
 
     // 绘制
     drawAll() {
         this.drawRing()
+        this.drawDragBtn()
+        this.drawAxisMark()
     }
 }
