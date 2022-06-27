@@ -1,11 +1,19 @@
 // 坐标
-import { mergeData } from '@/utils/dataHandle'
+import { angle2Radian, mergeData, value2Angle } from '@/utils/dataHandle'
 import {
     createContainerEl,
     createHDCanvas,
     getContainerEl,
     getEleHW,
 } from '@/utils/element'
+import {
+    DefSectorConfig,
+    drawArc,
+    drawCircular,
+    drawRect,
+    drawSector,
+    RectConfig,
+} from '@/utils/canvasDraw'
 
 export interface Coordinate {
     x: number
@@ -61,6 +69,8 @@ export interface DataConf {
     dragBtnSmallMax?: number
     // 滑块大的那一端的最小值
     dragBtnBigMin?: number
+    // 当前的值
+    value: number[]
 }
 
 // 配置项
@@ -74,13 +84,13 @@ export interface CircleSliderConf {
 
 // 用户传入
 export type CircleSliderConfUser<T = CircleSliderConf> = {
-    [P in keyof T]-?: Partial<T[P]>
+    [P in keyof T]?: Partial<T[P]>
 }
 
 const defConf: CircleSliderConfUser = {
     ringConf: {
-        sAngle: 110.5,
-        eAngle: 372.5,
+        sAngle: 135,
+        eAngle: 405,
         ringW: 10,
         // org: { x: 0, y: 0 },
         // r: 20,
@@ -119,19 +129,23 @@ export default class CircleSlider {
     private canvasEl: HTMLCanvasElement
     // canvas 的上下文
     private ctx: CanvasRenderingContext2D
+    // 当前的值的范围
+    private nowValue: number[]
 
-    constructor(conf: CircleSliderConfUser) {
+    constructor(conf: CircleSliderConfUser = {}) {
         this.conf = mergeData<CircleSliderConf>(
             defConf as CircleSliderConf,
             conf as CircleSliderConf
         )
         this.userConf = conf
         this.initConf()
+        this.drawAll()
     }
     // 初始化元素相关
     initEl() {
         this.userContainerEl = getContainerEl(this.conf.el)
         this.containerEl = createContainerEl()
+        this.userContainerEl.appendChild(this.containerEl)
         this.containerWH = getEleHW(this.containerEl)
         const { canvas, ctx } = createHDCanvas(
             this.containerWH.w,
@@ -146,17 +160,17 @@ export default class CircleSlider {
         const c = this.conf
         const uC = this.userConf
         // 环的中心 s
-        if (uC.ringConf.org === undefined) {
+        if (uC?.ringConf?.org === undefined) {
             // 默认为容器中心
             c.ringConf.org = {
-                x: Math.floor(this.containerWH.w),
-                y: Math.floor(this.containerWH.h),
+                x: Math.floor(this.containerWH.w / 2),
+                y: Math.floor(this.containerWH.h / 2),
             }
         }
         // 环的中心 e
 
         // 环的半径 s
-        if (uC.ringConf.r === undefined) {
+        if (uC?.ringConf?.r === undefined) {
             const yR = Math.floor(
                 c.ringConf.org.y - c.axisMark.fontSize - c.ringConf.ringW / 2
             )
@@ -169,24 +183,89 @@ export default class CircleSlider {
         // 环的半径 e
 
         // 按钮的半径 s
-        if (uC.dragBtn.r === undefined) {
+        if (uC?.dragBtn?.r === undefined) {
             c.dragBtn.r = Math.floor(c.ringConf.ringW / 2)
         }
         // 按钮的半径 e
 
         // 限制值 s
-        if (uC.dataConf.dragBtnBigMin === undefined) {
+        if (uC?.dataConf?.dragBtnBigMin === undefined) {
             c.dataConf.dragBtnBigMin = c.dataConf.min
         }
 
-        if (uC.dataConf.dragBtnSmallMax === undefined) {
+        if (uC?.dataConf?.dragBtnSmallMax === undefined) {
             c.dataConf.dragBtnSmallMax = c.dataConf.max
         }
         // 限制值 e
+
+        // 当前值 s
+        if (uC.dataConf.value === undefined) {
+            c.dataConf.value = [c.dataConf.min, c.dataConf.max]
+        }
+        this.nowValue = [...c.dataConf.value]
+        // 当前值 e
     }
     // 初始化配置
     initConf() {
         this.initEl()
         this.initConfDef()
+    }
+
+    // 当前 值的角度
+    get nowValueAngle() {
+        const c = this.conf
+        const value2AngleConf = {
+            sAngle: c.ringConf.sAngle,
+            eAngle: c.ringConf.eAngle,
+            sV: c.dataConf.min,
+            eV: c.dataConf.max,
+        }
+        const target = {
+            sAngle: value2Angle(this.nowValue[0], value2AngleConf),
+            eAngle: value2Angle(this.nowValue[1], value2AngleConf),
+        }
+        return target
+    }
+
+    // 绘制环
+    drawRing() {
+        const c = this.conf
+        const ctx = this.ctx
+
+        // 底层
+        drawArc(ctx, {
+            center: {
+                x: c.ringConf.org.x,
+                y: c.ringConf.org.y,
+            },
+            r: c.ringConf.r,
+            startAngle: c.ringConf.sAngle,
+            endAngle: c.ringConf.eAngle,
+            drawStyle: {
+                w: c.ringConf.ringW,
+                style: c.ringConf.bgc,
+                lineCap: 'round',
+            },
+        })
+        // active 的环
+        drawArc(ctx, {
+            center: {
+                x: c.ringConf.org.x,
+                y: c.ringConf.org.y,
+            },
+            r: c.ringConf.r,
+            startAngle: this.nowValueAngle.sAngle,
+            endAngle: this.nowValueAngle.eAngle,
+            drawStyle: {
+                w: c.ringConf.ringW,
+                style: c.ringConf.activeBgc,
+                lineCap: 'round',
+            },
+        })
+    }
+
+    // 绘制
+    drawAll() {
+        this.drawRing()
     }
 }

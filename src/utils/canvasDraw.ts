@@ -1,7 +1,7 @@
 /**
  * canvas 绘制相关
  */
-import { deepCopy, mergeData } from '@/utils/dataHandle'
+import { angle2Radian, deepCopy, mergeData } from '@/utils/dataHandle'
 import { logError } from '@/utils/log'
 import { isOdd } from '@/utils/index'
 
@@ -31,6 +31,7 @@ export interface DrawStyle {
     style?: StrokeAndFillStyle
     // 本项存在就是虚线
     lineDash?: number[]
+    lineCap?: CanvasLineCap
 }
 export const DefDrawStyle: DrawStyle = {
     w: 1,
@@ -44,6 +45,9 @@ function setDrawStyle(
     drawStyle: DrawStyle = { w: 1, style: '#000' }
 ) {
     drawStyle = drawStyle || {}
+    if (drawStyle.lineCap) {
+        ctx.lineCap = drawStyle.lineCap
+    }
     if (drawType === 'stroke') {
         drawStyle.w && (ctx.lineWidth = drawStyle.w)
         drawStyle.lineDash && ctx.setLineDash(drawStyle.lineDash)
@@ -383,7 +387,6 @@ export function drawSector(
             (sectorConfig.startAngle * Math.PI) / 180,
             (sectorConfig.endAngle * Math.PI) / 180
         )
-        ctx.closePath()
     } else {
         // 空心扇形
         const maxR = Math.max(...sectorConfig.r)
@@ -428,6 +431,46 @@ export function drawSector(
         // ctx.closePath()
     }
     drawTypeDraw(ctx, sectorConfig.drawType)
+    ctx.restore()
+}
+
+export interface ArcConf {
+    center: Coordinate
+    // 半径， 如果为元组类型表示为空心圆
+    r: number
+    drawType?: DrawType
+    // 包含边框 和 填充样式
+    drawStyle?: DrawStyle
+    // 开始角度, 不是弧度
+    startAngle: number
+    // 结束角度 不是弧度
+    endAngle: number
+    lineCap?: string
+}
+
+const ArcConfDef: Partial<ArcConf> = {
+    drawType: 'stroke',
+    drawStyle: deepCopy(DefDrawStyle),
+}
+
+/**
+ * 绘制弧形
+ * @param ctx
+ * @param conf
+ */
+export function drawArc(ctx: CanvasRenderingContext2D, conf: ArcConf) {
+    const useCOnf = mergeData(ArcConfDef, conf)
+    ctx.save()
+    ctx.beginPath()
+    setDrawStyle(ctx, useCOnf.drawType, useCOnf.drawStyle)
+    ctx.arc(
+        useCOnf.center.x,
+        useCOnf.center.y,
+        useCOnf.r,
+        angle2Radian(useCOnf.startAngle),
+        angle2Radian(useCOnf.endAngle)
+    )
+    drawTypeDraw(ctx, useCOnf.drawType)
     ctx.restore()
 }
 

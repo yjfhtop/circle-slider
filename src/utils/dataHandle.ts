@@ -284,3 +284,27 @@ export function scaleCalc(
 
     return scaleDate
 }
+
+// 角度转弧度
+export function angle2Radian(angle: number) {
+    return angle * (Math.PI / 180)
+}
+
+// 弧度转角度
+export function radian2Angle(radian: number) {
+    return (180 / Math.PI) * radian
+}
+
+export interface GetAngleConf {
+    sAngle: number
+    eAngle: number
+    sV: number
+    eV: number
+}
+// 值获取角度
+export function value2Angle(v: number, conf: GetAngleConf) {
+    const addDiffAngle = Math.abs(conf.eAngle - conf.sAngle)
+    const allDiff = conf.eV - conf.sV
+    const valueDiff = v - conf.sV
+    return (valueDiff / allDiff) * addDiffAngle + conf.sAngle
+}
