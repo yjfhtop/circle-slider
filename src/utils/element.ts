@@ -16,6 +16,15 @@ export function getContainerEl(
     }
 }
 
+export function createContainerEl() {
+    const div = document.createElement('div')
+    div.style.width = '100%'
+    div.style.height = '100%'
+    div.style.position = 'relative'
+    div.style.boxSizing = 'border-box'
+    return div
+}
+
 /**
  * 获取文本的宽度
  * @param ctx

@@ -1,74 +1,192 @@
 // 坐标
 import { mergeData } from '@/utils/dataHandle'
+import {
+    createContainerEl,
+    createHDCanvas,
+    getContainerEl,
+    getEleHW,
+} from '@/utils/element'
 
 export interface Coordinate {
     x: number
     y: number
 }
 
+export interface WH {
+    w: number
+    h: number
+}
+
 // 环的配置
 export interface RingConf {
     // 开始角度
-    sAngle: number
+    sAngle?: number
     // 结束角度
-    eAngle: number
+    eAngle?: number
     // 环的宽度
-    ringW: number
-    // 圆心
-    org: number
-    // 半径, 环到圆心的距离
-    r: number
+    ringW?: number
+    // 圆心, 默认中心点(需要计算)
+    org?: Coordinate
+    // 半径, 环到圆心的距离 (需要计算)
+    r?: number
     // 环的颜色
-    ringColor: string
+    bgc?: string
+    activeBgc?: string
 }
+// Partial
 
 // 轴标的配置项
 export interface AxisMark {
-    fontSize: number
-    fontColor: string
+    fontSize?: number
+    fontColor?: string
+    // 步长
+    step?: number
 }
 
 // 拖拽的 按钮样式
 export interface DragBtn {
     // 半径
-    r: number
+    r?: number
     // 背景颜色
-    bgc: string
+    bgc?: string
     // 选中后的颜色
-    activeBgc: string
+    activeBgc?: string
 }
 
 // 数据的配置
 export interface DataConf {
-    min: number
-    max: number
+    min?: number
+    max?: number
     // 滑块小的那一端的最大值
-    dragBtnSmallMax: number
+    dragBtnSmallMax?: number
     // 滑块大的那一端的最小值
-    dragBtnBigMin: number
+    dragBtnBigMin?: number
 }
 
 // 配置项
 export interface CircleSliderConf {
-    ringConf: RingConf
-    axisMark: AxisMark
-    dragBtn: DragBtn
-    dataConf: DataConf
+    ringConf: Required<RingConf>
+    axisMark: Required<AxisMark>
+    dragBtn: Required<DragBtn>
+    dataConf: Required<DataConf>
+    el: HTMLElement | string
 }
 
 // 用户传入
-export type CircleSliderConfUser = Partial<CircleSliderConf>
-
-const defConf = {
-    ringConf: {},
+export type CircleSliderConfUser<T = CircleSliderConf> = {
+    [P in keyof T]-?: Partial<T[P]>
 }
 
-class CircleSlider {
+const defConf: CircleSliderConfUser = {
+    ringConf: {
+        sAngle: 110.5,
+        eAngle: 372.5,
+        ringW: 10,
+        // org: { x: 0, y: 0 },
+        // r: 20,
+        bgc: '#ccc',
+        activeBgc: '#0eb0c9',
+    },
+    axisMark: {
+        fontSize: 14,
+        fontColor: '#000',
+        step: 1,
+    },
+    dragBtn: {
+        // r: 5,
+        bgc: '#ccc',
+        activeBgc: '#0eb0c9',
+    },
+    dataConf: {
+        min: 0,
+        max: 10,
+        // dragBtnBigMin: 5,
+        // dragBtnSmallMax: 5,
+    },
+    el: '#circleSlider',
+}
+
+export default class CircleSlider {
     private conf: CircleSliderConf
+    private userConf: CircleSliderConfUser
+    // 用户提供的容器
+    private userContainerEl: HTMLElement
+    // canvas 的容器
+    private containerEl: HTMLDivElement
+    // 日期的宽高
+    private containerWH: WH
+    // canvas
+    private canvasEl: HTMLCanvasElement
+    // canvas 的上下文
+    private ctx: CanvasRenderingContext2D
+
     constructor(conf: CircleSliderConfUser) {
-        // this.conf = mergeData()
+        this.conf = mergeData<CircleSliderConf>(
+            defConf as CircleSliderConf,
+            conf as CircleSliderConf
+        )
+        this.userConf = conf
+        this.initConf()
     }
-    // get spanAngle () {
-    //     return Math.abs(this.eAngle - this.sAngle)
-    // }
+    // 初始化元素相关
+    initEl() {
+        this.userContainerEl = getContainerEl(this.conf.el)
+        this.containerEl = createContainerEl()
+        this.containerWH = getEleHW(this.containerEl)
+        const { canvas, ctx } = createHDCanvas(
+            this.containerWH.w,
+            this.containerWH.h
+        )
+        this.canvasEl = canvas
+        this.ctx = ctx
+        this.containerEl.appendChild(this.canvasEl)
+    }
+    // 初始化默认值
+    initConfDef() {
+        const c = this.conf
+        const uC = this.userConf
+        // 环的中心 s
+        if (uC.ringConf.org === undefined) {
+            // 默认为容器中心
+            c.ringConf.org = {
+                x: Math.floor(this.containerWH.w),
+                y: Math.floor(this.containerWH.h),
+            }
+        }
+        // 环的中心 e
+
+        // 环的半径 s
+        if (uC.ringConf.r === undefined) {
+            const yR = Math.floor(
+                c.ringConf.org.y - c.axisMark.fontSize - c.ringConf.ringW / 2
+            )
+            const xR = Math.floor(
+                c.ringConf.org.x - c.axisMark.fontSize - c.ringConf.ringW / 2
+            )
+            c.ringConf.r = Math.min(yR, xR)
+        }
+
+        // 环的半径 e
+
+        // 按钮的半径 s
+        if (uC.dragBtn.r === undefined) {
+            c.dragBtn.r = Math.floor(c.ringConf.ringW / 2)
+        }
+        // 按钮的半径 e
+
+        // 限制值 s
+        if (uC.dataConf.dragBtnBigMin === undefined) {
+            c.dataConf.dragBtnBigMin = c.dataConf.min
+        }
+
+        if (uC.dataConf.dragBtnSmallMax === undefined) {
+            c.dataConf.dragBtnSmallMax = c.dataConf.max
+        }
+        // 限制值 e
+    }
+    // 初始化配置
+    initConf() {
+        this.initEl()
+        this.initConfDef()
+    }
 }

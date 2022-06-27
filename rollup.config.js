@@ -14,7 +14,7 @@ import alias from '@rollup/plugin-alias'
 // 用于替换字符串， 用于环境变量
 import replace from '@rollup/plugin-replace'
 
-export const LibName = 'circleSlider'
+export const LibName = 'CircleSlider'
 export const resolveFile = function (filePath) {
     return path.join(__dirname, filePath)
 }

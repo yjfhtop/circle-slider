@@ -1,163 +1,26 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang='en'>
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+    <meta charset='UTF-8'>
     <meta name='viewport'
           content='width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0'>
     <meta http-equiv='X-UA-Compatible' content='ie=edge'>
+    <title>Document</title>
     <script src="dist/index.js"></script>
     <style>
-        * {
-            padding: 0;
-            margin: 0;
-        }
-        body {
-            padding-top: 40px;
-            /*background-color: #000;*/
-        }
-        #k_line {
-            width: 80vw;
-            height: 80vh;
-            margin: 0 auto;
+        .c {
+            width: 200px;
+            height: 200px;
         }
     </style>
-    <script src='testDate/5minute.js'></script>
-
 </head>
 <body>
-<button id='addTool'>添加工具</button>
-<button id='updateLastData'>修改最后的数据</button>
-<button id='pushData'>添加新数据</button>
-<button id='unshiftData'>添加旧数据</button>
-<button id='updateConf'>修改配置项</button>
-<button id='reSize'>大小变化</button>
-<div id="k_line">
+<div class='c'>
+
 </div>
-</body>
+
 <script>
-    const second = 1000
-    const minute = second * 60
-    const hour = minute * 60
-    const day = hour * 24
-    let dataList = []
-    const startDate = new Date('2018-10-01').getTime()
-    const diffDate = minute * 1
-
-    for (let i = 0; i < 100; i++) {
-        let maxVale = Math.floor(Math.random() * 3000) + 3000
-        const diffVale = Math.floor(Math.random() * 3000)
-        let minValue = Math.abs(maxVale - diffVale)
-        maxVale = Math.max(maxVale, minValue)
-        minValue = Math.min(maxVale, minValue)
-
-        const open = minValue + Math.floor(Math.random() * diffVale)
-        const close = minValue + Math.floor(Math.random() * diffVale)
-        dataList.push({
-            close: close,
-            open: open,
-            min: minValue,
-            max: maxVale,
-            date: startDate + i * diffDate,
-            turnover: 10000 + Math.floor(Math.random() * 100000)
-        })
-    }
-
-    const fiveMinuteArr = fiveMinute.map(item => {
-        return {
-            close: parseFloat(item.close),
-            open: parseFloat(item.open),
-            min: parseFloat(item.low),
-            max: parseFloat(item.high),
-            date: new Date(item.day).getTime(),
-            turnover: parseFloat(item.volume / 10000000)
-        }
-    })
-    const useDataArr = fiveMinuteArr.slice(50, 150)
-    const lastDataArr = fiveMinuteArr.slice(150)
-    const preDataArr = fiveMinuteArr.slice(0, 50)
-    let sIndex = 0
-    let preIndex = 50
-
-    const conf = {
-        chartShowArr: ['mainChart', 'testChart'],
-        chartConfMap: {
-            testChart: {
-                indicatorShowArr: ['volumeIndicators'],
-                yConf: {
-                    zeroMust: true
-                }
-            }
-        }
-    }
-    const kLine = new SimpleKLine('#k_line', useDataArr, conf)
-
-    const addTool = document.getElementById('addTool')
-    addTool.addEventListener('click', () => {
-        // kLine.addTool('triangle')
-        kLine.addTool('lineSegment')
-    })
-    console.log(kLine)
-
-    // kLine.on('loadNew', () => {
-    //
-    // })
-    // kLine.on('loadOld', (overCbK, disCbk) => {
-    //     setTimeout(() => {
-    //         try {
-    //             if (preIndex < 0) disCbk()
-    //             const dataArr = preDataArr.slice(preIndex - 10, preIndex)
-    //             preIndex -= 10
-    //             kLine.updateData(dataArr, 'addOld')
-    //         } catch (e) {
-    //
-    //         } finally {
-    //             overCbK()
-    //         }
-    //     }, 1000)
-    // })
-
-
-    // 修改最后的数据
-    const updateDataBtn = document.getElementById('updateLastData')
-    updateDataBtn.addEventListener('click', () => {
-        const item = useDataArr[useDataArr.length - 1]
-        const diff = item.max - item.min
-        item.close = Math.floor(Math.random() * diff) + item.min
-        kLine.updateData(item, 'lastItem')
-    })
-
-    // 添加数据
-    const pushDataBtn = document.getElementById('pushData')
-    pushDataBtn.addEventListener('click', () => {
-        const addArr = lastDataArr.slice(sIndex, sIndex += 20)
-        kLine.updateData(addArr, 'addNew')
-    })
-
-    // 添加旧数据
-    const unshiftDataBtn = document.getElementById('unshiftData')
-    unshiftDataBtn.addEventListener('click', ()=> {
-        if (preIndex < 0) return
-        const dataArr = preDataArr.slice(preIndex - 10, preIndex)
-        preIndex -= 10
-        kLine.updateData(dataArr, 'addOld')
-    })
-
-    const updateConfBtn = document.getElementById('updateConf')
-    updateConfBtn.addEventListener('click', () => {
-        kLine.setConf({
-            chartShowArr: ['mainChart', 'test'],
-            chartConfMap: {
-                test: {
-                    indicatorShowArr: ['maIndicators']
-                }
-            }
-        })
-    })
-
-    const reSizeBtn = document.getElementById('reSize')
-    reSizeBtn.addEventListener('click', () => {
-        kLine.reSize()
-    })
+    const circleSlider = new CircleSlider()
 </script>
+</body>
 </html>
