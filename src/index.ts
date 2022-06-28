@@ -16,6 +16,7 @@ import {
     RectConfig,
 } from '@/utils/canvasDraw'
 import { angle2Coordinate, value2Angle } from './utils/coordinate'
+import { logError } from '@/utils/log'
 
 export interface Coordinate {
     x: number
@@ -25,6 +26,20 @@ export interface Coordinate {
 export interface WH {
     w: number
     h: number
+}
+export interface CalcAxisMarkItem {
+    // 绘制的文本
+    txt: string
+    // 角度
+    angle: number
+    // 开始角度 拖拽使用
+    sAngle: number
+    // 结束角度 拖拽使用
+    eAngle: number
+    // 文本的对齐放方式
+    textAlign: CanvasTextAlign
+    // 文本的坐标
+    coordinate: Coordinate
 }
 
 // 环的配置
@@ -152,6 +167,8 @@ export default class CircleSlider {
     private ctx: CanvasRenderingContext2D
     // 当前的值的范围
     private nowValue: number[]
+    // 轴标需要的数据 缓存
+    private calcAxisMarkDataArrCache: CalcAxisMarkItem[]
 
     constructor(conf: CircleSliderConfUser = {}) {
         this.conf = mergeData<CircleSliderConf>(
@@ -160,7 +177,9 @@ export default class CircleSlider {
         )
         this.userConf = conf
         this.initConf()
-        this.drawAll()
+        if (this.checkConf()) {
+            this.drawAll()
+        }
     }
     // 初始化元素相关
     initEl() {
@@ -240,6 +259,19 @@ export default class CircleSlider {
         this.nowValue = [...c.dataConf.value]
         // 当前值 e
     }
+    // 校验
+    checkConf() {
+        // step s
+        const c = this.conf
+        const remainder = (c.dataConf.max - c.dataConf.min) % c.dataConf.step
+        if (remainder !== 0) {
+            logError(`checkConf`, `step 无法被 max 和 min 的值整除, 请重新设置`)
+            return false
+        }
+        // step e
+
+        return true
+    }
     // 初始化配置
     initConf() {
         this.initEl()
@@ -265,6 +297,27 @@ export default class CircleSlider {
     get axisMarkR() {
         const c = this.conf
         return c.ringConf.r + c.ringConf.ringW / 2 + c.axisMark.distance
+    }
+
+    // 轴标的个数
+    get markNumber() {
+        const c = this.conf
+        const number = (c.dataConf.max - c.dataConf.min) / c.dataConf.step
+        return number + 1
+    }
+
+    // 每个 轴标的 间隔角度
+    get markItemAngle() {
+        const c = this.conf
+        return Math.abs(c.ringConf.eAngle - c.ringConf.sAngle) / this.markNumber
+    }
+
+    get axisMarkDataArr() {
+        if (this.calcAxisMarkDataArrCache) {
+            return this.calcAxisMarkDataArrCache
+        }
+        this.calcAxisMark()
+        return this.calcAxisMarkDataArrCache
     }
 
     // 绘制环
@@ -343,11 +396,32 @@ export default class CircleSlider {
         })
     }
 
-    // 绘制轴标
-    drawAxisMark() {
+    // 获取轴标文字的对齐方式
+    angleGetAlign(angle: number): CanvasTextAlign {
+        const useAngle = angle % 360
+        // 误差值
+        const errorNumber = 2
+        // center
+        if (
+            (useAngle >= 90 - errorNumber && useAngle <= 90 + errorNumber) ||
+            (useAngle >= 270 - errorNumber && useAngle <= 270 + errorNumber)
+        ) {
+            return 'center'
+        }
+
+        if (useAngle > 90 && useAngle < 270) {
+            return 'right'
+        }
+        return 'left'
+    }
+
+    // 计算 轴标 需要的数据
+    calcAxisMark() {
+        // this.calcAxisMarkDataArr
         const c = this.conf
         const min = c.dataConf.min
         const max = c.dataConf.max
+        const dataArr: CalcAxisMarkItem[] = []
         const value2AngleConf = {
             sAngle: c.ringConf.sAngle,
             eAngle: c.ringConf.eAngle,
@@ -355,47 +429,47 @@ export default class CircleSlider {
             eV: c.dataConf.max,
         }
         const axisMarkR = this.axisMarkR
-
-        function angleGetAlign(angle: number): CanvasTextAlign {
-            const useAngle = angle % 360
-            // 误差值
-            const errorNumber = 2
-            // center
-            if (
-                (useAngle >= 90 - errorNumber &&
-                    useAngle <= 90 + errorNumber) ||
-                (useAngle >= 270 - errorNumber && useAngle <= 270 + errorNumber)
-            ) {
-                return 'center'
-            }
-
-            if (useAngle > 90 && useAngle < 270) {
-                return 'right'
-            }
-            return 'left'
-        }
-
-        for (let i = min; i <= max; i++) {
-            //绘制每一个轴标
-            const txt = i + ''
+        const itemAngle = this.markItemAngle
+        const markNumber = this.markNumber
+        for (let i = 0; i < markNumber; i++) {
+            const txt = String(min + i * c.dataConf.step)
             const angle = value2Angle(i, value2AngleConf)
-            console.log(angle, 'angle')
             // 文本的绘制坐标
             const coordinate = angle2Coordinate(
                 angle,
                 axisMarkR,
                 c.ringConf.org
             )
-            console.log(coordinate, 'coordinate')
+            const sAngle = i === 0 ? angle : angle - itemAngle / 2
+            const eAngle = i === markNumber - 1 ? angle : angle + itemAngle / 2
+            const textAlign = this.angleGetAlign(angle)
+            const item: CalcAxisMarkItem = {
+                txt,
+                angle,
+                sAngle,
+                eAngle,
+                coordinate,
+                textAlign,
+            }
+            dataArr.push(item)
+        }
+        this.calcAxisMarkDataArrCache = dataArr
+    }
+    // 绘制轴标
+    drawAxisMark() {
+        const c = this.conf
+        const axisMarkDataArr = this.axisMarkDataArr
+        for (let i = 0; i < axisMarkDataArr.length; i++) {
+            const item = axisMarkDataArr[i]
             drawTxt(this.ctx, {
-                coordinate: coordinate,
-                txt: txt,
+                coordinate: item.coordinate,
+                txt: item.txt,
                 fontSize: c.axisMark.fontSize,
                 drawType: 'full',
                 drawStyle: {
                     style: c.axisMark.fontColor,
                 },
-                textAlign: angleGetAlign(angle),
+                textAlign: item.textAlign,
             })
         }
     }
