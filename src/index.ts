@@ -5,6 +5,7 @@ import {
     createHDCanvas,
     getContainerEl,
     getEleHW,
+    getPixelRatio,
 } from '@/utils/element'
 import {
     DefSectorConfig,
@@ -15,8 +16,14 @@ import {
     drawTxt,
     RectConfig,
 } from '@/utils/canvasDraw'
-import { angle2Coordinate, value2Angle } from './utils/coordinate'
+import {
+    angle2Coordinate,
+    pointInsideCircle,
+    twoDotGetXAngle,
+    value2Angle,
+} from './utils/coordinate'
 import { logError } from '@/utils/log'
+import { getNearInterval } from '@/utils/index'
 
 export interface Coordinate {
     x: number
@@ -40,6 +47,8 @@ export interface CalcAxisMarkItem {
     textAlign: CanvasTextAlign
     // 文本的坐标
     coordinate: Coordinate
+    // 对应的值
+    v: number
 }
 
 // 环的配置
@@ -66,6 +75,8 @@ export interface AxisMark {
     fontColor?: string
     // 与环的间隔距离
     distance?: number
+    // 轴标的数目, 尽可能接近本值
+    axisMarkNumber?: number
 }
 
 // 拖拽的 按钮样式
@@ -76,6 +87,7 @@ export interface DragBtn {
     bgc?: string
     // 选中后的颜色
     activeBgc?: string
+    // 当前选中的按钮
     activeBtn?: 's' | 'e'
 }
 
@@ -108,6 +120,10 @@ export interface CircleSliderConf {
     dataConf: Required<DataConf>
     el: HTMLElement | string
     grid: Grid
+    // 当选中的按钮变化时触发
+    activeBtnChange: (type: DragBtn['activeBtn']) => any
+    // 值改变时触发
+    valueChange: (nowV: number[], type: DragBtn['activeBtn']) => any
 }
 
 // 用户传入
@@ -129,6 +145,7 @@ const defConf: CircleSliderConfUser = {
         fontSize: 14,
         fontColor: '#ccc',
         distance: 10,
+        axisMarkNumber: 11,
     },
     dragBtn: {
         // r: 5,
@@ -159,7 +176,7 @@ export default class CircleSlider {
     private userContainerEl: HTMLElement
     // canvas 的容器
     private containerEl: HTMLDivElement
-    // 日期的宽高
+    // 容器的宽高
     private containerWH: WH
     // canvas
     private canvasEl: HTMLCanvasElement
@@ -167,8 +184,9 @@ export default class CircleSlider {
     private ctx: CanvasRenderingContext2D
     // 当前的值的范围
     private nowValue: number[]
-    // 轴标需要的数据 缓存
+    // 轴标需要的数据 缓存(其中包含了 不需要作为轴标显示的 数据)
     private calcAxisMarkDataArrCache: CalcAxisMarkItem[]
+    private pixelRatio = getPixelRatio()
 
     constructor(conf: CircleSliderConfUser = {}) {
         this.conf = mergeData<CircleSliderConf>(
@@ -179,6 +197,7 @@ export default class CircleSlider {
         this.initConf()
         if (this.checkConf()) {
             this.drawAll()
+            this.initEvent()
         }
     }
     // 初始化元素相关
@@ -253,11 +272,20 @@ export default class CircleSlider {
         // 限制值 e
 
         // 当前值 s
-        if (uC.dataConf.value === undefined) {
+        if (uC?.dataConf?.value === undefined) {
             c.dataConf.value = [c.dataConf.min, c.dataConf.max]
         }
         this.nowValue = [...c.dataConf.value]
         // 当前值 e
+
+        // 轴标的数目(这个是约值) axisMarkNumber s
+        if (uC?.axisMark?.axisMarkNumber === undefined) {
+            c.axisMark.axisMarkNumber = Math.min(
+                Math.floor((c.dataConf.max - c.dataConf.min) / c.dataConf.step),
+                Math.floor(this.seAngleDiff / 30)
+            )
+        }
+        // 轴标的数目 axisMarkNumber e
     }
     // 校验
     checkConf() {
@@ -278,6 +306,12 @@ export default class CircleSlider {
         this.initConfDef()
     }
 
+    // 角度差
+    get seAngleDiff() {
+        const c = this.conf
+        return Math.abs(c.ringConf.eAngle - c.ringConf.sAngle)
+    }
+
     // 当前 值的角度
     get nowValueAngle() {
         const c = this.conf
@@ -293,6 +327,28 @@ export default class CircleSlider {
         }
         return target
     }
+
+    // 当前值的坐标
+    get nowValueCoordinate() {
+        const c = this.conf
+        // 小值 按钮
+        const minCoordinate = angle2Coordinate(
+            this.nowValueAngle.sAngle,
+            c.ringConf.r,
+            c.ringConf.org
+        )
+        // 大值按钮
+        const maxCoordinate = angle2Coordinate(
+            this.nowValueAngle.eAngle,
+            c.ringConf.r,
+            c.ringConf.org
+        )
+        return {
+            minCoordinate,
+            maxCoordinate,
+        }
+    }
+
     // 轴标到圆心的距离
     get axisMarkR() {
         const c = this.conf
@@ -312,12 +368,21 @@ export default class CircleSlider {
         return Math.abs(c.ringConf.eAngle - c.ringConf.sAngle) / this.markNumber
     }
 
+    // 获取轴标使用的数据
     get axisMarkDataArr() {
         if (this.calcAxisMarkDataArrCache) {
             return this.calcAxisMarkDataArrCache
         }
         this.calcAxisMark()
         return this.calcAxisMarkDataArrCache
+    }
+
+    // 每个要绘制的轴标间隔几个
+    get markIntervalNumber() {
+        return getNearInterval(
+            this.axisMarkDataArr.length,
+            this.conf.axisMark.axisMarkNumber
+        )
     }
 
     // 绘制环
@@ -361,13 +426,9 @@ export default class CircleSlider {
     drawDragBtn() {
         const c = this.conf
         // 小值 按钮
-        const minC = angle2Coordinate(
-            this.nowValueAngle.sAngle,
-            c.ringConf.r,
-            c.ringConf.org
-        )
+        const nowValueCoordinate = this.nowValueCoordinate
         drawCircular(this.ctx, {
-            center: minC,
+            center: nowValueCoordinate.minCoordinate,
             r: c.dragBtn.r,
             drawStyle: {
                 style:
@@ -378,13 +439,8 @@ export default class CircleSlider {
             drawType: 'full',
         })
         // 大值按钮
-        const maxC = angle2Coordinate(
-            this.nowValueAngle.eAngle,
-            c.ringConf.r,
-            c.ringConf.org
-        )
         drawCircular(this.ctx, {
-            center: maxC,
+            center: nowValueCoordinate.maxCoordinate,
             r: c.dragBtn.r,
             drawStyle: {
                 style:
@@ -432,7 +488,8 @@ export default class CircleSlider {
         const itemAngle = this.markItemAngle
         const markNumber = this.markNumber
         for (let i = 0; i < markNumber; i++) {
-            const txt = String(min + i * c.dataConf.step)
+            const v = min + i * c.dataConf.step
+            const txt = String(v)
             const angle = value2Angle(i, value2AngleConf)
             // 文本的绘制坐标
             const coordinate = angle2Coordinate(
@@ -450,6 +507,7 @@ export default class CircleSlider {
                 eAngle,
                 coordinate,
                 textAlign,
+                v,
             }
             dataArr.push(item)
         }
@@ -459,7 +517,8 @@ export default class CircleSlider {
     drawAxisMark() {
         const c = this.conf
         const axisMarkDataArr = this.axisMarkDataArr
-        for (let i = 0; i < axisMarkDataArr.length; i++) {
+        const markIntervalNumber = this.markIntervalNumber
+        for (let i = 0; i < axisMarkDataArr.length; i += markIntervalNumber) {
             const item = axisMarkDataArr[i]
             drawTxt(this.ctx, {
                 coordinate: item.coordinate,
@@ -474,8 +533,167 @@ export default class CircleSlider {
         }
     }
 
+    // 判断 dot 是否在 按钮上,  multiple 的按钮的半径背书, 越大, 按钮的可点击范围越大
+    dotInDragBtn(dot: Coordinate, multiple = 1) {
+        const c = this.conf
+        const r = c.dragBtn.r
+        const useR = r * multiple
+        const nowValueCoordinate = this.nowValueCoordinate
+        const inMin = pointInsideCircle(
+            dot,
+            nowValueCoordinate.minCoordinate,
+            useR
+        )
+        const inMax = pointInsideCircle(
+            dot,
+            nowValueCoordinate.maxCoordinate,
+            useR
+        )
+        return {
+            inMin,
+            inMax,
+        }
+    }
+
+    // 判断点是否在环上
+    dotInRing(dot: Coordinate, multiple = 1) {
+        const c = this.conf
+        const ctx = this.ctx
+        let inRing = false
+        ctx.save()
+        ctx.beginPath()
+        ctx.lineWidth = c.ringConf.ringW * multiple
+        ctx.strokeStyle = '#000'
+        ctx.arc(
+            c.ringConf.org.x,
+            c.ringConf.org.y,
+            c.ringConf.r,
+            c.ringConf.sAngle,
+            c.ringConf.eAngle
+        )
+        console.log(dot)
+        inRing = ctx.isPointInStroke(
+            dot.x * this.pixelRatio,
+            dot.y * this.pixelRatio
+        )
+        ctx.restore()
+        return inRing
+    }
+
+    // 设置 选中的 按钮
+    setDragBtnActiveBtn(v: DragBtn['activeBtn']) {
+        if (v !== this.conf.dragBtn.activeBtn) {
+            this.conf.dragBtn.activeBtn = v
+            this.conf.activeBtnChange && this.conf.activeBtnChange(v)
+        }
+    }
+    // 设置当前选中的值
+    setNowActiveV(newV: number) {
+        const c = this.conf
+        const activeBtn = c.dragBtn.activeBtn
+        const nowV = this.nowValue
+        const dragBtnSmallMax = c.dataConf.dragBtnSmallMax
+        const dragBtnBigMin = c.dataConf.dragBtnBigMin
+        // 判断是否符合
+        if (activeBtn === 's') {
+            if (
+                newV < nowV[1] &&
+                (typeof dragBtnSmallMax === 'number'
+                    ? newV <= dragBtnSmallMax
+                    : true)
+            ) {
+                // 符合
+                this.nowValue[0] = newV
+                c.valueChange && c.valueChange([...this.nowValue], 's')
+                return true
+            }
+        } else {
+            if (
+                newV > nowV[0] &&
+                (typeof dragBtnBigMin === 'number'
+                    ? newV >= dragBtnBigMin
+                    : true)
+            ) {
+                // 符合
+                this.nowValue[1] = newV
+                c.valueChange && c.valueChange([...this.nowValue], 'e')
+                return true
+            }
+        }
+    }
+    dotSetValue(dot: Coordinate) {
+        const c = this.conf
+        const axisMarkDataArr = this.axisMarkDataArr
+        // 点在环上, 获取角度, 然后设置值
+        const angle = twoDotGetXAngle(c.ringConf.org, { ...dot })
+        // 判断角度在那个区间
+        const targetItem = axisMarkDataArr.find((item) => {
+            return angle >= item.sAngle && angle < item.eAngle
+        })
+        console.log(angle, 'angle--------')
+        console.log(targetItem, 'targetItem---')
+        if (targetItem) {
+            this.setNowActiveV(targetItem.v)
+            this.drawAll()
+        }
+    }
+    // 初始化事件
+    initEvent() {
+        // 点击是否选中了按钮
+        let clickActiveBtn = false
+        this.canvasEl.addEventListener('touchstart', (e) => {
+            const c = this.conf
+            const x = e.touches[0].clientX
+            const y = e.touches[0].clientY
+
+            const nowValueCoordinate = this.nowValueCoordinate
+            const axisMarkDataArr = this.axisMarkDataArr
+
+            const dotInDragBtnObj = this.dotInDragBtn({ x, y }, 1.5)
+            // 处理active的按钮
+            if (dotInDragBtnObj.inMin) {
+                this.setDragBtnActiveBtn('s')
+                clickActiveBtn = true
+                this.drawAll()
+            } else if (dotInDragBtnObj.inMax) {
+                this.setDragBtnActiveBtn('e')
+                clickActiveBtn = true
+                this.drawAll()
+            } else {
+                clickActiveBtn = false
+                // 没有在按钮上, 那么就尝试应用点击处理逻辑
+                // 判断当前选中的按钮 和 角度, 进行变化
+                const isInRing = this.dotInRing({ x, y }, 2)
+                if (isInRing) {
+                    this.dotSetValue({ x, y })
+                }
+            }
+        })
+
+        this.canvasEl.addEventListener('touchmove', (e) => {
+            const c = this.conf
+            const x = e.touches[0].clientX
+            const y = e.touches[0].clientY
+            if (clickActiveBtn) {
+                console.log('点击 时选中了按钮')
+                // const angle = twoDotGetXAngle(c.ringConf.org, { x, y })
+                this.dotSetValue({ x, y })
+            }
+        })
+
+        this.canvasEl.addEventListener('touchend', (e) => {
+            console.log(11)
+        })
+
+        window.addEventListener('touchend', () => {
+            console.log(22)
+            clickActiveBtn = false
+        })
+    }
+
     // 绘制
     drawAll() {
+        this.ctx.clearRect(0, 0, this.containerWH.w, this.containerWH.h)
         this.drawRing()
         this.drawDragBtn()
         this.drawAxisMark()

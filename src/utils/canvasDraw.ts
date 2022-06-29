@@ -446,11 +446,14 @@ export interface ArcConf {
     // 结束角度 不是弧度
     endAngle: number
     lineCap?: string
+    // 是否不绘制
+    noDraw?: boolean
 }
 
 const ArcConfDef: Partial<ArcConf> = {
     drawType: 'stroke',
     drawStyle: deepCopy(DefDrawStyle),
+    noDraw: false,
 }
 
 /**
@@ -470,8 +473,11 @@ export function drawArc(ctx: CanvasRenderingContext2D, conf: ArcConf) {
         angle2Radian(useCOnf.startAngle),
         angle2Radian(useCOnf.endAngle)
     )
-    drawTypeDraw(ctx, useCOnf.drawType)
-    ctx.restore()
+    if (conf.noDraw) {
+    } else {
+        drawTypeDraw(ctx, useCOnf.drawType)
+        ctx.restore()
+    }
 }
 
 export type Direction = 'top' | 'left' | 'right' | 'bottom' | 'auto'

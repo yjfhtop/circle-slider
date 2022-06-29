@@ -163,3 +163,36 @@ export function binarySearch<T>(
     }
     return useDichotomy(list, value, getValue, s, e)
 }
+
+/**
+ * 获取最接近与目标值的间隔数
+ * @param len
+ * @param target
+ */
+export function getNearInterval(len: number, target: number): number {
+    // 存储 空隙
+    let arr: number[] = []
+    for (let i = 1; i < len; i++) {
+        if (i === 1) {
+            arr.push(i)
+        } else {
+            const v = i
+            const remainder = (len - 1) % v
+            // 轴标个数
+            const number = (len - 1) / v + 1
+            if (remainder === 0) {
+                const nowDiff = Math.abs(number - target)
+                const preDiff = Math.abs(
+                    (len - 1) / arr[arr.length - 1] + 1 - target
+                )
+                if (nowDiff - preDiff > 0) {
+                    break
+                } else {
+                    arr.push(number)
+                }
+            }
+        }
+    }
+    const v = arr[arr.length - 1]
+    return v
+}

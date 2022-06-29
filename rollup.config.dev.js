@@ -16,7 +16,7 @@ rollupDveConfig.plugins = [
     serve({
         open: true,
         port: 8858,
-        host: '0.0.0.0',
+        // host: '0.0.0.0',
         contentBase: '',
     }),
     livereload({
