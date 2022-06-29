@@ -150,7 +150,7 @@ const defConf: CircleSliderConfUser = {
     dragBtn: {
         // r: 5,
         bgc: '#ccc',
-        activeBgc: '#0eb0c9',
+        activeBgc: '#00FF00',
         activeBtn: 's',
     },
     dataConf: {
@@ -255,6 +255,7 @@ export default class CircleSlider {
 
         // 按钮的半径 s
         if (uC?.dragBtn?.r === undefined) {
+            console.log('----------')
             // 1.8倍大小
             const baseR = Math.floor((c.ringConf.ringW / 2) * 1.8)
             c.dragBtn.r = baseR
@@ -304,6 +305,15 @@ export default class CircleSlider {
     initConf() {
         this.initEl()
         this.initConfDef()
+    }
+
+    // 获取当前激活按钮值
+    get nowActiveV() {
+        const activeType = this.conf.dragBtn.activeBtn
+        if (activeType === 's') {
+            return this.nowValue[0]
+        }
+        return this.nowValue[1]
     }
 
     // 角度差
@@ -417,7 +427,7 @@ export default class CircleSlider {
             drawStyle: {
                 w: c.ringConf.ringW,
                 style: c.ringConf.activeBgc,
-                // lineCap: 'round',
+                lineCap: 'round',
             },
         })
     }
@@ -594,6 +604,9 @@ export default class CircleSlider {
         const nowV = this.nowValue
         const dragBtnSmallMax = c.dataConf.dragBtnSmallMax
         const dragBtnBigMin = c.dataConf.dragBtnBigMin
+        if (newV < c.dataConf.min || newV > c.dataConf.max) {
+            return false
+        }
         // 判断是否符合
         if (activeBtn === 's') {
             if (
@@ -621,7 +634,8 @@ export default class CircleSlider {
             }
         }
     }
-    dotSetValue(dot: Coordinate) {
+    // 画布上的点设置当前激活按钮的值
+    dotSetActiveValue(dot: Coordinate) {
         const c = this.conf
         const axisMarkDataArr = this.axisMarkDataArr
         // 点在环上, 获取角度, 然后设置值
@@ -630,18 +644,28 @@ export default class CircleSlider {
         const targetItem = axisMarkDataArr.find((item) => {
             return angle >= item.sAngle && angle < item.eAngle
         })
-        console.log(angle, 'angle--------')
-        console.log(targetItem, 'targetItem---')
         if (targetItem) {
             this.setNowActiveV(targetItem.v)
             this.drawAll()
         }
+    }
+    // 递增 或者 递减 当前激活按钮的值
+    incOrDecActiveNow(type: '+' | '-' = '+') {
+        const c = this.conf
+        const nowV = this.nowActiveV
+        console.log(nowV + c.dataConf.step, 'nowV + c.dataConf.step')
+        const nextV =
+            type === '+' ? nowV + c.dataConf.step : nowV - c.dataConf.step
+        this.setNowActiveV(nextV)
+        this.drawAll()
     }
     // 初始化事件
     initEvent() {
         // 点击是否选中了按钮
         let clickActiveBtn = false
         this.canvasEl.addEventListener('touchstart', (e) => {
+            e.stopPropagation()
+            e.preventDefault()
             const c = this.conf
             const x = e.touches[0].clientX
             const y = e.touches[0].clientY
@@ -665,28 +689,26 @@ export default class CircleSlider {
                 // 判断当前选中的按钮 和 角度, 进行变化
                 const isInRing = this.dotInRing({ x, y }, 2)
                 if (isInRing) {
-                    this.dotSetValue({ x, y })
+                    this.dotSetActiveValue({ x, y })
                 }
             }
         })
 
         this.canvasEl.addEventListener('touchmove', (e) => {
+            e.stopPropagation()
+            e.preventDefault()
             const c = this.conf
             const x = e.touches[0].clientX
             const y = e.touches[0].clientY
             if (clickActiveBtn) {
-                console.log('点击 时选中了按钮')
                 // const angle = twoDotGetXAngle(c.ringConf.org, { x, y })
-                this.dotSetValue({ x, y })
+                this.dotSetActiveValue({ x, y })
             }
         })
 
-        this.canvasEl.addEventListener('touchend', (e) => {
-            console.log(11)
-        })
+        this.canvasEl.addEventListener('touchend', (e) => {})
 
         window.addEventListener('touchend', () => {
-            console.log(22)
             clickActiveBtn = false
         })
     }

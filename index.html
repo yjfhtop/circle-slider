@@ -23,13 +23,32 @@
 
 </div>
 
+<button id='addBtn'>  添加 </button>
+<button id='reduceBtn'>  减小 </button>
+
 <script>
     const circleSlider = new CircleSlider({
+        ringConf: {
+            ringW: 15
+        },
         dataConf: {
             value: [2, 8]
+        },
+        dragBtn: {
+            r: 5
         }
     })
     console.log(circleSlider)
+
+    const addBtn = document.querySelector('#addBtn')
+    const reduceBtn = document.querySelector('#reduceBtn')
+
+    addBtn.addEventListener('click', () => {
+        circleSlider.incOrDecActiveNow('+')
+    })
+    reduceBtn.addEventListener('click', () => {
+        circleSlider.incOrDecActiveNow('-')
+    })
 </script>
 </body>
 </html>
