@@ -32,10 +32,18 @@
             ringW: 15
         },
         dataConf: {
-            value: [2, 8]
+            min: 10,
+            max: 50,
+            value: [15, 30],
+            step: 5,
+            dragBtnSmallMax: 30,
+            dragBtnBigMin: 20
         },
         dragBtn: {
             r: 5
+        },
+        valueChange: (arr, type)=> {
+            console.log(arr)
         }
     })
     console.log(circleSlider)

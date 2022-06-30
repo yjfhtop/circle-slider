@@ -170,8 +170,8 @@ export function binarySearch<T>(
  * @param target
  */
 export function getNearInterval(len: number, target: number): number {
-    // 存储 空隙
-    let arr: number[] = []
+    // 存储间隔数目
+    let arr = []
     for (let i = 1; i < len; i++) {
         if (i === 1) {
             arr.push(i)
@@ -188,11 +188,10 @@ export function getNearInterval(len: number, target: number): number {
                 if (nowDiff - preDiff > 0) {
                     break
                 } else {
-                    arr.push(number)
+                    arr.push(i)
                 }
             }
         }
     }
-    const v = arr[arr.length - 1]
-    return v
+    return arr[arr.length - 1]
 }

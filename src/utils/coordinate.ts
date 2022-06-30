@@ -45,6 +45,7 @@ export function value2Angle(v: number, conf: GetAngleConf) {
     } else {
         return target % 360
     }
+    // return target
 }
 
 // 角度得 原上的点

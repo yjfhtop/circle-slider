@@ -255,7 +255,6 @@ export default class CircleSlider {
 
         // 按钮的半径 s
         if (uC?.dragBtn?.r === undefined) {
-            console.log('----------')
             // 1.8倍大小
             const baseR = Math.floor((c.ringConf.ringW / 2) * 1.8)
             c.dragBtn.r = baseR
@@ -294,10 +293,26 @@ export default class CircleSlider {
         const c = this.conf
         const remainder = (c.dataConf.max - c.dataConf.min) % c.dataConf.step
         if (remainder !== 0) {
-            logError(`checkConf`, `step 无法被 max 和 min 的值整除, 请重新设置`)
+            logError(
+                `checkConf`,
+                `step: 无法被 max 和 min 的值整除, 请重新设置`
+            )
             return false
         }
         // step e
+
+        // 最大最小值的校验 s
+        if (
+            c.dataConf.value[0] < c.dataConf.min ||
+            c.dataConf.value[1] > c.dataConf.max
+        ) {
+            logError(
+                `checkConf`,
+                `c.dataConf.value: 当前的值不在最大和最小值的范围内`
+            )
+            return false
+        }
+        // 最大最小值的校验 e
 
         return true
     }
@@ -481,7 +496,7 @@ export default class CircleSlider {
         return 'left'
     }
 
-    // 计算 轴标 需要的数据
+    // 计算 可能作为轴标 需要的数据
     calcAxisMark() {
         // this.calcAxisMarkDataArr
         const c = this.conf
@@ -497,8 +512,9 @@ export default class CircleSlider {
         const axisMarkR = this.axisMarkR
         const itemAngle = this.markItemAngle
         const markNumber = this.markNumber
-        for (let i = 0; i < markNumber; i++) {
-            const v = min + i * c.dataConf.step
+        for (let i = min; i <= max; i += c.dataConf.step) {
+            // const itemV =
+            const v = i
             const txt = String(v)
             const angle = value2Angle(i, value2AngleConf)
             // 文本的绘制坐标
@@ -581,7 +597,6 @@ export default class CircleSlider {
             c.ringConf.sAngle,
             c.ringConf.eAngle
         )
-        console.log(dot)
         inRing = ctx.isPointInStroke(
             dot.x * this.pixelRatio,
             dot.y * this.pixelRatio
@@ -607,8 +622,10 @@ export default class CircleSlider {
         if (newV < c.dataConf.min || newV > c.dataConf.max) {
             return false
         }
+        // if ()
         // 判断是否符合
         if (activeBtn === 's') {
+            if (this.nowValue[0] === newV) return
             if (
                 newV < nowV[1] &&
                 (typeof dragBtnSmallMax === 'number'
@@ -621,6 +638,7 @@ export default class CircleSlider {
                 return true
             }
         } else {
+            if (this.nowValue[1] === newV) return
             if (
                 newV > nowV[0] &&
                 (typeof dragBtnBigMin === 'number'
@@ -653,7 +671,6 @@ export default class CircleSlider {
     incOrDecActiveNow(type: '+' | '-' = '+') {
         const c = this.conf
         const nowV = this.nowActiveV
-        console.log(nowV + c.dataConf.step, 'nowV + c.dataConf.step')
         const nextV =
             type === '+' ? nowV + c.dataConf.step : nowV - c.dataConf.step
         this.setNowActiveV(nextV)
@@ -673,7 +690,7 @@ export default class CircleSlider {
             const nowValueCoordinate = this.nowValueCoordinate
             const axisMarkDataArr = this.axisMarkDataArr
 
-            const dotInDragBtnObj = this.dotInDragBtn({ x, y }, 1.5)
+            const dotInDragBtnObj = this.dotInDragBtn({ x, y }, 2)
             // 处理active的按钮
             if (dotInDragBtnObj.inMin) {
                 this.setDragBtnActiveBtn('s')
