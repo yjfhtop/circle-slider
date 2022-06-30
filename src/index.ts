@@ -187,6 +187,7 @@ export default class CircleSlider {
     // 轴标需要的数据 缓存(其中包含了 不需要作为轴标显示的 数据)
     private calcAxisMarkDataArrCache: CalcAxisMarkItem[]
     private pixelRatio = getPixelRatio()
+    private eventObj: Record<string, any> = {}
 
     constructor(conf: CircleSliderConfUser = {}) {
         this.conf = mergeData<CircleSliderConf>(
@@ -201,18 +202,30 @@ export default class CircleSlider {
         }
     }
     // 初始化元素相关
-    initEl() {
-        this.userContainerEl = getContainerEl(this.conf.el)
-        this.containerEl = createContainerEl()
-        this.userContainerEl.appendChild(this.containerEl)
-        this.containerWH = getEleHW(this.containerEl)
-        const { canvas, ctx } = createHDCanvas(
-            this.containerWH.w,
-            this.containerWH.h
-        )
-        this.canvasEl = canvas
-        this.ctx = ctx
-        this.containerEl.appendChild(this.canvasEl)
+    initEl(resize = false) {
+        if (!resize) {
+            this.userContainerEl = getContainerEl(this.conf.el)
+            this.containerEl = createContainerEl()
+            this.userContainerEl.appendChild(this.containerEl)
+            this.containerWH = getEleHW(this.containerEl)
+            const { canvas, ctx } = createHDCanvas(
+                this.containerWH.w,
+                this.containerWH.h
+            )
+            this.canvasEl = canvas
+            this.ctx = ctx
+            this.containerEl.appendChild(this.canvasEl)
+        } else {
+            this.containerEl.removeChild(this.canvasEl)
+            this.containerWH = getEleHW(this.containerEl)
+            const { canvas, ctx } = createHDCanvas(
+                this.containerWH.w,
+                this.containerWH.h
+            )
+            this.canvasEl = canvas
+            this.ctx = ctx
+            this.containerEl.appendChild(this.canvasEl)
+        }
     }
     // 初始化默认值
     initConfDef() {
@@ -680,7 +693,8 @@ export default class CircleSlider {
     initEvent() {
         // 点击是否选中了按钮
         let clickActiveBtn = false
-        this.canvasEl.addEventListener('touchstart', (e) => {
+        // this.eventObj
+        this.eventObj.touchstart = (e: TouchEvent) => {
             e.stopPropagation()
             e.preventDefault()
             const c = this.conf
@@ -709,9 +723,8 @@ export default class CircleSlider {
                     this.dotSetActiveValue({ x, y })
                 }
             }
-        })
-
-        this.canvasEl.addEventListener('touchmove', (e) => {
+        }
+        this.eventObj.touchmove = (e: TouchEvent) => {
             e.stopPropagation()
             e.preventDefault()
             const c = this.conf
@@ -721,13 +734,30 @@ export default class CircleSlider {
                 // const angle = twoDotGetXAngle(c.ringConf.org, { x, y })
                 this.dotSetActiveValue({ x, y })
             }
-        })
-
-        this.canvasEl.addEventListener('touchend', (e) => {})
-
-        window.addEventListener('touchend', () => {
+        }
+        this.eventObj.touchend = (e: TouchEvent) => {
             clickActiveBtn = false
-        })
+        }
+
+        this.containerEl.addEventListener(
+            'touchstart',
+            this.eventObj.touchstart
+        )
+        this.containerEl.addEventListener('touchmove', this.eventObj.touchmove)
+
+        window.addEventListener('touchend', this.eventObj.touchend)
+    }
+
+    unEvent() {
+        this.containerEl.removeEventListener(
+            'touchstart',
+            this.eventObj.touchstart
+        )
+        this.containerEl.removeEventListener(
+            'touchmove',
+            this.eventObj.touchmove
+        )
+        window.removeEventListener('touchend', this.eventObj.touchend)
     }
 
     // 绘制
@@ -736,5 +766,34 @@ export default class CircleSlider {
         this.drawRing()
         this.drawDragBtn()
         this.drawAxisMark()
+    }
+    // 处理窗口大小变化
+    reSize() {
+        console.log('reSize')
+        this.pixelRatio = getPixelRatio()
+        // dom 处理
+        this.initEl(true)
+        // 圆心 半径的变化
+        this.initConfDef()
+        // 处理轴标位置
+        this.calcAxisMark()
+        this.drawAll()
+    }
+    // 改变配置
+    setOption(conf: CircleSliderConfUser = {}) {
+        // this.userConf = conf
+        // this.conf = mergeData<CircleSliderConf>(
+        //     defConf as CircleSliderConf,
+        //     conf as CircleSliderConf
+        // )
+        // this.initConfDef()
+        // if (this.checkConf()) {
+        //     console.log(this)
+        //     this.drawAll()
+        // }
+    }
+    destruction() {
+        this.unEvent()
+        this.userContainerEl.removeChild(this.containerEl)
     }
 }

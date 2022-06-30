@@ -647,7 +647,7 @@ export function drawTxt(ctx: CanvasRenderingContext2D, txtConf: TxtConf) {
     const c = mergeData(DefTxtConf, txtConf)
     ctx.save()
     ctx.beginPath()
-    ctx.font = `${c.fontSize} ${c.fontFamily}`
+    ctx.font = `${c.fontSize}px ${c.fontFamily}`
     ctx.textBaseline = c.textBaseline
     ctx.direction = c.direction
     ctx.textAlign = c.textAlign
