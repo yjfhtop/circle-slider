@@ -1,15 +1,38 @@
 <!DOCTYPE html>
-<html lang='en'>
-<head>
-    <meta charset='UTF-8'>
-    <title>Title</title>
-</head>
-<body>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name='viewport'
+              content='width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0'>
+        <meta http-equiv='X-UA-Compatible' content='ie=edge'>
+        <title>Title</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+            }
+            .c {
+                width: 50vw;
+                height: 40vw;
+            }
+            body {
+                padding: 50px;
+            }
+        </style>
+    </head>
+    <body>
+        <div style='height: 300px;'>
 
-</body>
-<script type="module">
-    import CircleSlider from './dist/es/index.js'
+        </div>
+        <div class="c" id="circleSlider"></div>
+        <div >
 
-    console.log(CircleSlider)
-</script>
+        </div>
+    </body>
+    <script type="module">
+        import CircleSlider from "./dist/es/index.js";
+
+        new CircleSlider({});
+        console.log(CircleSlider);
+    </script>
 </html>

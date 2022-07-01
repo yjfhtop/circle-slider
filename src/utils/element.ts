@@ -118,3 +118,15 @@ export function getEleHW(el: HTMLElement, floor = true): WH {
         h: floor ? Math.floor(H) : H,
     }
 }
+// 获取元素相当于页面的距离
+export function getElementTop(element: HTMLElement) {
+    let actualTop = element.offsetTop
+    let current: any = element.offsetParent
+
+    while (current !== null) {
+        actualTop += current.offsetTop
+        current = current.offsetParent
+    }
+
+    return actualTop
+}

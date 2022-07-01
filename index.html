@@ -15,44 +15,57 @@
         .c {
             width: 50vw;
             height: 40vw;
+            border: 1px solid #000;
+        }
+        body {
+            padding: 30px;
         }
     </style>
 </head>
 <body>
+<div style='height: 300px;'>
+
+</div>
 <div class='c' id='circleSlider'>
 
 </div>
 
+
 <button id='addBtn'>  添加 </button>
 <button id='reduceBtn'>  减小 </button>
-<button id='setOp'>  从新写配置项 </button>
+<button id='setOp'>  查看left top </button>
+
+<div style='height: 600px;'>
+
+</div>
 
 <script>
     const conf = {
-        ringConf: {
-            ringW: 15
-        },
-        dataConf: {
-            min: 10,
-            max: 50,
-            value: [15, 30],
-            step: 5,
-            dragBtnSmallMax: 30,
-            dragBtnBigMin: 20
-        },
-        dragBtn: {
-            r: 5
-        },
-        valueChange: (arr, type)=> {
-            console.log(arr)
-        },
-        axisMark: {
-            fontSize: 14
-        }
+        // ringConf: {
+        //     ringW: 15
+        // },
+        // dataConf: {
+        //     min: 10,
+        //     max: 50,
+        //     value: [15, 30],
+        //     step: 5,
+        //     dragBtnSmallMax: 30,
+        //     dragBtnBigMin: 20
+        // },
+        // dragBtn: {
+        //     r: 5
+        // },
+        // valueChange: (arr, type)=> {
+        //     console.log(arr)
+        // },
+        // axisMark: {
+        //     fontSize: 14
+        // }
     }
     let circleSlider = new CircleSlider(conf)
     console.log(circleSlider)
 
+    const circleSliderEl = document.querySelector('#circleSlider')
     const addBtn = document.querySelector('#addBtn')
     const reduceBtn = document.querySelector('#reduceBtn')
     const setOp = document.querySelector('#setOp')
@@ -64,8 +77,9 @@
         circleSlider.incOrDecActiveNow('-')
     })
     setOp.addEventListener('click', () => {
-        conf.axisMark.fontSize+=10
-        circleSlider.setOption(conf)
+        // conf.axisMark.fontSize+=10
+        // circleSlider.setOption(conf)
+        console.log(circleSliderEl.getBoundingClientRect())
 
     })
 

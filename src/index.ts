@@ -188,6 +188,8 @@ export default class CircleSlider {
     private calcAxisMarkDataArrCache: CalcAxisMarkItem[]
     private pixelRatio = getPixelRatio()
     private eventObj: Record<string, any> = {}
+    // 容器元素的位置
+    private containerElDOMRectObj: DOMRect & { isDirty: boolean }
 
     constructor(conf: CircleSliderConfUser = {}) {
         this.conf = mergeData<CircleSliderConf>(
@@ -333,6 +335,14 @@ export default class CircleSlider {
     initConf() {
         this.initEl()
         this.initConfDef()
+    }
+
+    get conRect() {
+        if (!this.containerElDOMRectObj || this.containerElDOMRectObj.isDirty) {
+            this.containerElDOMRectObj =
+                this.containerEl.getBoundingClientRect() as any
+        }
+        return this.containerElDOMRectObj
     }
 
     // 获取当前激活按钮值
@@ -697,9 +707,9 @@ export default class CircleSlider {
         this.eventObj.touchstart = (e: TouchEvent) => {
             e.stopPropagation()
             e.preventDefault()
-            const c = this.conf
-            const x = e.touches[0].clientX
-            const y = e.touches[0].clientY
+            const conRect = this.conRect
+            const x = e.touches[0].clientX - conRect.left
+            const y = e.touches[0].clientY - conRect.top
 
             const nowValueCoordinate = this.nowValueCoordinate
             const axisMarkDataArr = this.axisMarkDataArr
@@ -727,9 +737,9 @@ export default class CircleSlider {
         this.eventObj.touchmove = (e: TouchEvent) => {
             e.stopPropagation()
             e.preventDefault()
-            const c = this.conf
-            const x = e.touches[0].clientX
-            const y = e.touches[0].clientY
+            const conRect = this.conRect
+            const x = e.touches[0].clientX - conRect.left
+            const y = e.touches[0].clientY - conRect.top
             if (clickActiveBtn) {
                 // const angle = twoDotGetXAngle(c.ringConf.org, { x, y })
                 this.dotSetActiveValue({ x, y })
@@ -739,6 +749,11 @@ export default class CircleSlider {
             clickActiveBtn = false
         }
 
+        this.eventObj.scroll = () => {
+            this.containerElDOMRectObj &&
+                (this.containerElDOMRectObj.isDirty = true)
+        }
+
         this.containerEl.addEventListener(
             'touchstart',
             this.eventObj.touchstart
@@ -746,6 +761,7 @@ export default class CircleSlider {
         this.containerEl.addEventListener('touchmove', this.eventObj.touchmove)
 
         window.addEventListener('touchend', this.eventObj.touchend)
+        window.addEventListener('scroll', this.eventObj.scroll)
     }
 
     unEvent() {
@@ -758,6 +774,7 @@ export default class CircleSlider {
             this.eventObj.touchmove
         )
         window.removeEventListener('touchend', this.eventObj.touchend)
+        window.removeEventListener('scroll', this.eventObj.scroll)
     }
 
     // 绘制
@@ -769,7 +786,6 @@ export default class CircleSlider {
     }
     // 处理窗口大小变化
     reSize() {
-        console.log('reSize')
         this.pixelRatio = getPixelRatio()
         // dom 处理
         this.initEl(true)
