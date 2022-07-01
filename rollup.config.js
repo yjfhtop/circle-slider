@@ -13,6 +13,7 @@ import alias from '@rollup/plugin-alias'
 
 // 用于替换字符串， 用于环境变量
 import replace from '@rollup/plugin-replace'
+import pkg from './package.json'
 
 export const LibName = 'CircleSlider'
 export const resolveFile = function (filePath) {
@@ -22,7 +23,8 @@ export const resolveFile = function (filePath) {
 export default {
     input: resolveFile('src/index.ts'),
     output: {
-        file: resolveFile(`dist/index.js`),
+        // file: resolveFile(`dist/index.js`),
+        file: pkg.module,
         format: 'umd',
         name: LibName,
         // 是否map文件
