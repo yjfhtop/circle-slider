@@ -1,6 +1,6 @@
 {
     "name": "yjfh-circle-slider",
-    "version": "0.0.3",
+    "version": "0.0.1",
     "description": "",
     "main": "dist/es/index.js",
     "module": "dist/umd/index.js",
@@ -37,5 +37,6 @@
         "tslib": "^2.3.1",
         "typescript": "^4.4.3"
     },
-    "dependencies": {}
+    "dependencies": {},
+    "homepage": "https://github.com/yjfhtop/circle-slider"
 }

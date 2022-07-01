@@ -17,12 +17,9 @@ npm run dev
 npm run build
 ```
 
-### 配置项
-起止角度    环,字体,拖拽点(平常和active的颜色),颜色  轴标文字大小  
+### 源码
+[源码](https://github.com/yjfhtop/circle-slider)
 
-### 思路
-1, 0角度(正右),
-2, 当选中一点时, 拖拽点 active, 拖动时, 按照sin 求角度, 方向顺时针
 
 
 
