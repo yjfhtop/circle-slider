@@ -21,7 +21,7 @@ rollupProConfig.output = [
 
 rollupProConfig.plugins = [
     ...rollupConfig.plugins,
-    terser(),
+    // terser(),
     filesize(),
     progress(),
 ]

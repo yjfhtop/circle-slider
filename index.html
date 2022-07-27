@@ -26,7 +26,7 @@
 <div style='height: 300px;'>
 
 </div>
-<div class='c' id='circleSlider'>
+<div class='c'>
 
 </div>
 
@@ -63,7 +63,7 @@
             distance: 5
         }
     }
-    let circleSlider = new CircleSlider(conf)
+    let circleSlider = new CircleSlider(document.querySelector('.c'), conf)
     console.log(circleSlider.nowValueCoordinate)
 
     const circleSliderEl = document.querySelector('#circleSlider')

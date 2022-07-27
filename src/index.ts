@@ -124,7 +124,7 @@ export interface CircleSliderConf {
     axisMark: Required<AxisMark>
     dragBtn: Required<DragBtn>
     dataConf: Required<DataConf>
-    el: HTMLElement | string
+    // el: HTMLElement | string
     grid: Grid
     // 当选中的按钮变化时触发
     activeBtnChange: (type: DragBtn['activeBtn']) => any
@@ -166,7 +166,7 @@ const defConf: CircleSliderConfUser = {
         // dragBtnBigMin: 5,
         // dragBtnSmallMax: 5,
     },
-    el: '#circleSlider',
+    // el: '#circleSlider',
     grid: {
         left: 10,
         right: 10,
@@ -197,7 +197,10 @@ export default class CircleSlider {
     // 容器元素的位置
     private containerElDOMRectObj: DOMRect & { isDirty: boolean }
 
-    constructor(conf: CircleSliderConfUser = {}) {
+    constructor(
+        public el: HTMLElement | string = '#circleSlider',
+        conf: CircleSliderConfUser = {}
+    ) {
         this.conf = mergeData<CircleSliderConf>(
             defConf as CircleSliderConf,
             conf as CircleSliderConf
@@ -212,7 +215,7 @@ export default class CircleSlider {
     // 初始化元素相关
     initEl(resize = false) {
         if (!resize) {
-            this.userContainerEl = getContainerEl(this.conf.el)
+            this.userContainerEl = getContainerEl(this.el)
             this.containerEl = createContainerEl()
             this.userContainerEl.appendChild(this.containerEl)
             this.containerWH = getEleHW(this.containerEl)

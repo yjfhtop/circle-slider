@@ -49,6 +49,8 @@ export function deepCopy<T>(data: T): T {
             case 'String':
             case 'Undefined':
                 return data
+            default:
+                return data
         }
     }
 
