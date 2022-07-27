@@ -89,6 +89,12 @@ export interface DragBtn {
     activeBgc?: string
     // 当前选中的按钮
     activeBtn?: 's' | 'e'
+    shadow?: {
+        x: number
+        y: number
+        blur: number
+        color: string
+    }
 }
 
 // 数据的配置
@@ -475,29 +481,49 @@ export default class CircleSlider {
         const c = this.conf
         // 小值 按钮
         const nowValueCoordinate = this.nowValueCoordinate
-        drawCircular(this.ctx, {
-            center: nowValueCoordinate.minCoordinate,
-            r: c.dragBtn.r,
-            drawStyle: {
-                style:
-                    c.dragBtn.activeBtn === 's'
-                        ? c.dragBtn.activeBgc
-                        : c.dragBtn.bgc,
+
+        function setShadow(ctx: CanvasRenderingContext2D) {
+            // box-shadow: 0px 2px 7.9px 0.1px rgba(0, 0, 0, 0.24);
+            if (c.dragBtn.shadow) {
+                const shadow = c.dragBtn.shadow
+                ctx.shadowOffsetX = shadow.x || 0
+                ctx.shadowOffsetY = shadow.y || 0
+                ctx.shadowBlur = shadow.blur || 0
+                ctx.shadowColor = shadow.color || 'rgba(255, 0, 0, 0.5)'
+            }
+        }
+
+        drawCircular(
+            this.ctx,
+            {
+                center: nowValueCoordinate.minCoordinate,
+                r: c.dragBtn.r,
+                drawStyle: {
+                    style:
+                        c.dragBtn.activeBtn === 's'
+                            ? c.dragBtn.activeBgc
+                            : c.dragBtn.bgc,
+                },
+                drawType: 'full',
             },
-            drawType: 'full',
-        })
+            setShadow
+        )
         // 大值按钮
-        drawCircular(this.ctx, {
-            center: nowValueCoordinate.maxCoordinate,
-            r: c.dragBtn.r,
-            drawStyle: {
-                style:
-                    c.dragBtn.activeBtn === 'e'
-                        ? c.dragBtn.activeBgc
-                        : c.dragBtn.bgc,
+        drawCircular(
+            this.ctx,
+            {
+                center: nowValueCoordinate.maxCoordinate,
+                r: c.dragBtn.r,
+                drawStyle: {
+                    style:
+                        c.dragBtn.activeBtn === 'e'
+                            ? c.dragBtn.activeBgc
+                            : c.dragBtn.bgc,
+                },
+                drawType: 'full',
             },
-            drawType: 'full',
-        })
+            setShadow
+        )
     }
 
     // 获取轴标文字的对齐方式
@@ -577,7 +603,9 @@ export default class CircleSlider {
                 drawStyle: {
                     style: c.axisMark.fontColor,
                 },
+                textBaseline: 'middle',
                 textAlign: item.textAlign,
+                // textAlign: 'center',
             })
         }
     }

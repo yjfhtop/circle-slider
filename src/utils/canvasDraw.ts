@@ -290,12 +290,14 @@ export const DefCircularConfig: CircularConfig = {
  */
 export function drawCircular(
     ctx: CanvasRenderingContext2D,
-    circularConfig: CircularConfig
+    circularConfig: CircularConfig,
+    beforeFun?: (c: CanvasRenderingContext2D) => any
 ) {
     circularConfig = mergeData(DefCircularConfig, circularConfig)
     ctx.save()
     ctx.beginPath()
     setDrawStyle(ctx, circularConfig.drawType, circularConfig.drawStyle)
+    beforeFun(ctx)
     if (typeof circularConfig.r === 'number') {
         ctx.arc(
             circularConfig.center.x,

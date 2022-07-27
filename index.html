@@ -45,12 +45,12 @@
             ringW: 15
         },
         dataConf: {
-            min: 10,
-            max: 50,
-            value: [15, 30],
-            step: 5,
-            dragBtnSmallMax: 30,
-            dragBtnBigMin: 20
+            min: 1,
+            max: 12,
+            value: [1, 5],
+            step: 1,
+            dragBtnSmallMax: 5,
+            dragBtnBigMin: 5
         },
         dragBtn: {
             r: 5
@@ -59,11 +59,12 @@
             console.log(arr)
         },
         axisMark: {
-            fontSize: 14
+            fontSize: 14,
+            distance: 5
         }
     }
     let circleSlider = new CircleSlider(conf)
-    console.log(circleSlider)
+    console.log(circleSlider.nowValueCoordinate)
 
     const circleSliderEl = document.querySelector('#circleSlider')
     const addBtn = document.querySelector('#addBtn')
