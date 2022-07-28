@@ -95,6 +95,10 @@ export interface DragBtn {
         blur: number
         color: string
     }
+    // 选中按钮的 小圆的半径
+    activeSmallR?: number
+    // 选中按钮的 小圆的背景颜色
+    activeSmallBgc?: string
 }
 
 // 数据的配置
@@ -157,7 +161,9 @@ const defConf: CircleSliderConfUser = {
         // r: 5,
         bgc: '#ccc',
         activeBgc: '#00FF00',
+        // activeSmallR: ,
         activeBtn: 's',
+        activeSmallBgc: '#fff',
     },
     dataConf: {
         min: 0,
@@ -282,6 +288,9 @@ export default class CircleSlider {
             // 1.8倍大小
             const baseR = Math.floor((c.ringConf.ringW / 2) * 1.8)
             c.dragBtn.r = baseR
+        }
+        if (uC?.dragBtn?.activeSmallR === undefined) {
+            c.dragBtn.activeSmallR = c.dragBtn.r / 2
         }
         // 按钮的半径 e
 
@@ -527,6 +536,21 @@ export default class CircleSlider {
             },
             setShadow
         )
+        let activeC: Coordinate
+        if (this.conf.dragBtn.activeBtn === 's') {
+            activeC = nowValueCoordinate.minCoordinate
+        } else {
+            activeC = nowValueCoordinate.maxCoordinate
+        }
+
+        drawCircular(this.ctx, {
+            center: activeC,
+            r: c.dragBtn.activeSmallR,
+            drawStyle: {
+                style: c.dragBtn.activeSmallBgc,
+            },
+            drawType: 'full',
+        })
     }
 
     // 获取轴标文字的对齐方式

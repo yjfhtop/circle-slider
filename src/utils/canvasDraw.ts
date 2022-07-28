@@ -297,7 +297,7 @@ export function drawCircular(
     ctx.save()
     ctx.beginPath()
     setDrawStyle(ctx, circularConfig.drawType, circularConfig.drawStyle)
-    beforeFun(ctx)
+    beforeFun && beforeFun(ctx)
     if (typeof circularConfig.r === 'number') {
         ctx.arc(
             circularConfig.center.x,
