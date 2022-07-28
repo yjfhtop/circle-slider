@@ -86,10 +86,11 @@
     })
 
     window.addEventListener('resize', ()=> {
-        circleSlider.destruction()
-        // conf.axisMark.fontSize+=10
-        circleSlider = new CircleSlider(conf)
-        console.log(circleSlider)
+        // circleSlider.destruction()
+        // // conf.axisMark.fontSize+=10
+        // circleSlider = new CircleSlider(document.querySelector('.c'),conf)
+        // console.log(circleSlider)
+        circleSlider.reSize()
     })
 </script>
 </body>
