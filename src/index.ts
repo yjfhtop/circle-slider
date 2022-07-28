@@ -130,6 +130,8 @@ export interface CircleSliderConf {
     dataConf: Required<DataConf>
     // el: HTMLElement | string
     grid: Grid
+    // 是否禁用
+    disable: boolean
     // 当选中的按钮变化时触发
     activeBtnChange: (type: DragBtn['activeBtn']) => any
     // 值改变时触发
@@ -173,6 +175,7 @@ const defConf: CircleSliderConfUser = {
         // dragBtnSmallMax: 5,
     },
     // el: '#circleSlider',
+    disable: false,
     grid: {
         left: 10,
         right: 10,
@@ -637,8 +640,8 @@ export default class CircleSlider {
         }
     }
 
-    // 判断 dot 是否在 按钮上,  multiple 的按钮的半径背书, 越大, 按钮的可点击范围越大
-    dotInDragBtn(dot: Coordinate, multiple = 1) {
+    // 判断 dot 是否在 按钮上,  multiple 的按钮的半径倍数, 越大, 按钮的可点击范围越大
+    dotInDragBtn(dot: Coordinate, multiple = 1.5) {
         const c = this.conf
         const r = c.dragBtn.r
         const useR = r * multiple
@@ -660,7 +663,7 @@ export default class CircleSlider {
     }
 
     // 判断点是否在环上
-    dotInRing(dot: Coordinate, multiple = 1) {
+    dotInRing(dot: Coordinate, multiple = 1.5) {
         const c = this.conf
         const ctx = this.ctx
         let inRing = false
@@ -683,8 +686,12 @@ export default class CircleSlider {
         return inRing
     }
 
-    // 设置 选中的 按钮
+    // 设置 当前选中的 按钮
     setDragBtnActiveBtn(v: DragBtn['activeBtn']) {
+        // 如果被禁用, 不变化
+        if (this.conf.disable) {
+            return
+        }
         if (v !== this.conf.dragBtn.activeBtn) {
             this.conf.dragBtn.activeBtn = v
             this.conf.activeBtnChange && this.conf.activeBtnChange(v)
@@ -700,7 +707,6 @@ export default class CircleSlider {
         if (newV < c.dataConf.min || newV > c.dataConf.max) {
             return false
         }
-        // if ()
         // 判断是否符合
         if (activeBtn === 's') {
             if (this.nowValue[0] === newV) return
@@ -733,6 +739,11 @@ export default class CircleSlider {
     // 画布上的点设置当前激活按钮的值
     dotSetActiveValue(dot: Coordinate) {
         const c = this.conf
+
+        if (c.disable) {
+            return
+        }
+
         const axisMarkDataArr = this.axisMarkDataArr
         // 点在环上, 获取角度, 然后设置值
         const angle = twoDotGetXAngle(c.ringConf.org, { ...dot })
@@ -760,6 +771,9 @@ export default class CircleSlider {
         let clickActiveBtn = false
         // this.eventObj
         this.eventObj.touchstart = (e: TouchEvent) => {
+            if (this.conf.disable) {
+                return
+            }
             e.stopPropagation()
             e.preventDefault()
             const conRect = this.conRect
@@ -790,6 +804,9 @@ export default class CircleSlider {
             }
         }
         this.eventObj.touchmove = (e: TouchEvent) => {
+            if (this.conf.disable) {
+                return
+            }
             e.stopPropagation()
             e.preventDefault()
             const conRect = this.conRect
@@ -801,6 +818,9 @@ export default class CircleSlider {
             }
         }
         this.eventObj.touchend = (e: TouchEvent) => {
+            if (this.conf.disable) {
+                return
+            }
             clickActiveBtn = false
         }
 
@@ -866,5 +886,9 @@ export default class CircleSlider {
     destruction() {
         this.unEvent()
         this.userContainerEl.removeChild(this.containerEl)
+    }
+    // 启用和禁用
+    disable(disable: boolean = false) {
+        this.conf.disable = disable
     }
 }
