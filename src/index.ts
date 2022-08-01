@@ -122,7 +122,7 @@ export interface Grid {
     bottom?: number
 }
 
-type ValueInconformityType = 's>e' | 'e<s' | 'min' | 'max'
+export type ValueInconformityType = 's>e' | 'e<s' | 'min' | 'max'
 
 // 配置项
 export interface CircleSliderConf {
