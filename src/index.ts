@@ -813,7 +813,13 @@ export default class CircleSlider {
 
             const dotInDragBtnObj = this.dotInDragBtn({ x, y }, 2)
             // 处理active的按钮
-            if (dotInDragBtnObj.inMin) {
+            if (dotInDragBtnObj.inMin && dotInDragBtnObj.inMax) {
+                // 如果2点重合, 优先选中之前被选中的点
+                const activeBtn = this.conf.dragBtn.activeBtn
+                this.setDragBtnActiveBtn(activeBtn)
+                clickActiveBtn = true
+                this.drawAll()
+            } else if (dotInDragBtnObj.inMin) {
                 this.setDragBtnActiveBtn('s')
                 clickActiveBtn = true
                 this.drawAll()
