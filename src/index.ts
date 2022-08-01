@@ -122,6 +122,8 @@ export interface Grid {
     bottom?: number
 }
 
+type ValueInconformityType = 's>e' | 'e<s' | 'min' | 'max'
+
 // 配置项
 export interface CircleSliderConf {
     ringConf: Required<RingConf>
@@ -137,7 +139,9 @@ export interface CircleSliderConf {
     // 值改变时触发
     valueChange: (nowV: number[], type: DragBtn['activeBtn']) => any
     // 值不符合 时触发, 比如最大是12, 现在以及是12了, 你调用了增加当前值的方法, 就会触发本函数
-    valueInconformity: () => any
+    // s>e: 开始值将要大于 结束值 触发, 'e<s: 结束值将要小于开始值
+    // min: 将要小于最小值  max: 将要大于最大值
+    valueInconformity: (type: ValueInconformityType) => any
     // 是否允许 2个按钮重合
     coincide: boolean
 }
@@ -719,6 +723,29 @@ export default class CircleSlider {
             this.conf.activeBtnChange && this.conf.activeBtnChange(v)
         }
     }
+
+    // 判断当前是那种类型导致的不能够修改值
+    getValueInconformityType(newV: number): ValueInconformityType {
+        const c = this.conf
+        const activeBtn = c.dragBtn.activeBtn
+        if (activeBtn === 's') {
+            if (newV > this.nowValue[1]) {
+                return 's>e'
+            }
+        } else {
+            if (newV < this.nowValue[0]) {
+                return 'e<s'
+            }
+        }
+
+        if (newV < c.dataConf.min) {
+            return 'min'
+        } else if (newV > c.dataConf.max) {
+            return 'max'
+        }
+        return null
+    }
+
     // 设置当前选中的值
     setNowActiveV(newV: number) {
         const c = this.conf
@@ -726,8 +753,9 @@ export default class CircleSlider {
         const nowV = this.nowValue
         const dragBtnSmallMax = c.dataConf.dragBtnSmallMax
         const dragBtnBigMin = c.dataConf.dragBtnBigMin
+        const type = this.getValueInconformityType(newV)
         if (newV < c.dataConf.min || newV > c.dataConf.max) {
-            c.valueInconformity && c.valueInconformity()
+            c.valueInconformity && c.valueInconformity(type)
             return false
         }
         // 判断是否符合
@@ -744,7 +772,7 @@ export default class CircleSlider {
                 c.valueChange && c.valueChange([...this.nowValue], 's')
                 return true
             } else {
-                c.valueInconformity && c.valueInconformity()
+                c.valueInconformity && c.valueInconformity(type)
             }
         } else {
             if (this.nowValue[1] === newV) return
@@ -759,7 +787,7 @@ export default class CircleSlider {
                 c.valueChange && c.valueChange([...this.nowValue], 'e')
                 return true
             } else {
-                c.valueInconformity && c.valueInconformity()
+                c.valueInconformity && c.valueInconformity(type)
             }
         }
     }

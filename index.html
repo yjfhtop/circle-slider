@@ -64,8 +64,8 @@
         },
         disable: false,
         coincide: true,
-        valueInconformity() {
-            console.log(6666)
+        valueInconformity(type) {
+            console.log(type)
         }
     }
     let circleSlider = new CircleSlider(document.querySelector('.c'), conf)
