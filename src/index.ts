@@ -136,6 +136,10 @@ export interface CircleSliderConf {
     activeBtnChange: (type: DragBtn['activeBtn']) => any
     // 值改变时触发
     valueChange: (nowV: number[], type: DragBtn['activeBtn']) => any
+    // 值不符合 时触发, 比如最大是12, 现在以及是12了, 你调用了增加当前值的方法, 就会触发本函数
+    valueInconformity: () => any
+    // 是否允许 2个按钮重合
+    coincide: boolean
 }
 
 // 用户传入
@@ -182,6 +186,7 @@ const defConf: CircleSliderConfUser = {
         top: 10,
         bottom: 0,
     },
+    coincide: false,
 }
 
 export default class CircleSlider {
@@ -508,37 +513,54 @@ export default class CircleSlider {
             }
         }
 
-        drawCircular(
-            this.ctx,
-            {
-                center: nowValueCoordinate.minCoordinate,
-                r: c.dragBtn.r,
-                drawStyle: {
-                    style:
-                        c.dragBtn.activeBtn === 's'
-                            ? c.dragBtn.activeBgc
-                            : c.dragBtn.bgc,
+        const drawMinBtn = () => {
+            // 小值按钮
+            drawCircular(
+                this.ctx,
+                {
+                    center: nowValueCoordinate.minCoordinate,
+                    r: c.dragBtn.r,
+                    drawStyle: {
+                        style:
+                            c.dragBtn.activeBtn === 's'
+                                ? c.dragBtn.activeBgc
+                                : c.dragBtn.bgc,
+                    },
+                    drawType: 'full',
                 },
-                drawType: 'full',
-            },
-            setShadow
-        )
-        // 大值按钮
-        drawCircular(
-            this.ctx,
-            {
-                center: nowValueCoordinate.maxCoordinate,
-                r: c.dragBtn.r,
-                drawStyle: {
-                    style:
-                        c.dragBtn.activeBtn === 'e'
-                            ? c.dragBtn.activeBgc
-                            : c.dragBtn.bgc,
+                setShadow
+            )
+        }
+
+        const drawMaxBtn = () => {
+            // 大值按钮
+            drawCircular(
+                this.ctx,
+                {
+                    center: nowValueCoordinate.maxCoordinate,
+                    r: c.dragBtn.r,
+                    drawStyle: {
+                        style:
+                            c.dragBtn.activeBtn === 'e'
+                                ? c.dragBtn.activeBgc
+                                : c.dragBtn.bgc,
+                    },
+                    drawType: 'full',
                 },
-                drawType: 'full',
-            },
-            setShadow
-        )
+                setShadow
+            )
+        }
+
+        // 保证active 滑块在上
+        if (this.conf.dragBtn.activeBtn === 's') {
+            drawMaxBtn()
+            drawMinBtn()
+        } else {
+            drawMinBtn()
+            drawMaxBtn()
+        }
+
+        // 选中的 环绘制
         let activeC: Coordinate
         if (this.conf.dragBtn.activeBtn === 's') {
             activeC = nowValueCoordinate.minCoordinate
@@ -705,13 +727,14 @@ export default class CircleSlider {
         const dragBtnSmallMax = c.dataConf.dragBtnSmallMax
         const dragBtnBigMin = c.dataConf.dragBtnBigMin
         if (newV < c.dataConf.min || newV > c.dataConf.max) {
+            c.valueInconformity && c.valueInconformity()
             return false
         }
         // 判断是否符合
         if (activeBtn === 's') {
             if (this.nowValue[0] === newV) return
             if (
-                newV < nowV[1] &&
+                (c.coincide ? newV <= nowV[1] : newV < nowV[1]) &&
                 (typeof dragBtnSmallMax === 'number'
                     ? newV <= dragBtnSmallMax
                     : true)
@@ -720,11 +743,13 @@ export default class CircleSlider {
                 this.nowValue[0] = newV
                 c.valueChange && c.valueChange([...this.nowValue], 's')
                 return true
+            } else {
+                c.valueInconformity && c.valueInconformity()
             }
         } else {
             if (this.nowValue[1] === newV) return
             if (
-                newV > nowV[0] &&
+                (c.coincide ? newV >= nowV[0] : newV > nowV[0]) &&
                 (typeof dragBtnBigMin === 'number'
                     ? newV >= dragBtnBigMin
                     : true)
@@ -733,6 +758,8 @@ export default class CircleSlider {
                 this.nowValue[1] = newV
                 c.valueChange && c.valueChange([...this.nowValue], 'e')
                 return true
+            } else {
+                c.valueInconformity && c.valueInconformity()
             }
         }
     }
@@ -758,6 +785,7 @@ export default class CircleSlider {
     }
     // 递增 或者 递减 当前激活按钮的值
     incOrDecActiveNow(type: '+' | '-' = '+') {
+        if (this.conf.disable) return
         const c = this.conf
         const nowV = this.nowActiveV
         const nextV =

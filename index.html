@@ -62,7 +62,11 @@
             fontSize: 14,
             distance: 5
         },
-        disable: true
+        disable: false,
+        coincide: true,
+        valueInconformity() {
+            console.log(6666)
+        }
     }
     let circleSlider = new CircleSlider(document.querySelector('.c'), conf)
     console.log(circleSlider.nowValueCoordinate)
