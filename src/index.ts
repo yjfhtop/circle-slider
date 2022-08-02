@@ -142,6 +142,10 @@ export interface CircleSliderConf {
     // s>e: 开始值将要大于 结束值 触发, 'e<s: 结束值将要小于开始值
     // min: 将要小于最小值  max: 将要大于最大值
     valueInconformity: (type: ValueInconformityType) => any
+    // 用户在触摸开始到结束, 值最终有没有发生变化, 如果有,触发本方法
+    finalValueChange: (v: number, type: DragBtn['activeBtn']) => any
+    // 是否在操作中, 按下为操作, 松开为结束操作
+    operationChange: (ing: boolean) => any
     // 是否允许 2个按钮重合
     coincide: boolean
 }
@@ -818,18 +822,30 @@ export default class CircleSlider {
         const nowV = this.nowActiveV
         const nextV =
             type === '+' ? nowV + c.dataConf.step : nowV - c.dataConf.step
-        this.setNowActiveV(nextV)
+        if (this.setNowActiveV(nextV)) {
+            // 表示设置成功
+            // 触发最终有没有修改值 的回调 s
+            c.finalValueChange && c.finalValueChange(nextV, c.dragBtn.activeBtn)
+            // 触发最终有没有修改值 的回调 e
+        }
+
         this.drawAll()
     }
     // 初始化事件
     initEvent() {
+        // 是否按下
+        let isPress = false
         // 点击是否选中了按钮
         let clickActiveBtn = false
+        // touchstart 时的值
+        let touchstartVArr = [...this.nowValue]
         // this.eventObj
         this.eventObj.touchstart = (e: TouchEvent) => {
             if (this.conf.disable) {
                 return
             }
+            isPress = true
+            touchstartVArr = [...this.nowValue]
             e.stopPropagation()
             e.preventDefault()
             const conRect = this.conRect
@@ -845,14 +861,17 @@ export default class CircleSlider {
                 // 如果2点重合, 优先选中之前被选中的点
                 const activeBtn = this.conf.dragBtn.activeBtn
                 this.setDragBtnActiveBtn(activeBtn)
+                this.conf.operationChange && this.conf.operationChange(true)
                 clickActiveBtn = true
                 this.drawAll()
             } else if (dotInDragBtnObj.inMin) {
                 this.setDragBtnActiveBtn('s')
+                this.conf.operationChange && this.conf.operationChange(true)
                 clickActiveBtn = true
                 this.drawAll()
             } else if (dotInDragBtnObj.inMax) {
                 this.setDragBtnActiveBtn('e')
+                this.conf.operationChange && this.conf.operationChange(true)
                 clickActiveBtn = true
                 this.drawAll()
             } else {
@@ -880,10 +899,36 @@ export default class CircleSlider {
             }
         }
         this.eventObj.touchend = (e: TouchEvent) => {
+            const oldClickActiveBtn = clickActiveBtn
+            clickActiveBtn = false
+            const oldIsPress = isPress
+            isPress = false
             if (this.conf.disable) {
                 return
             }
-            clickActiveBtn = false
+            if (oldClickActiveBtn) {
+                this.conf.operationChange && this.conf.operationChange(false)
+            }
+            // 触发最终有没有修改值 的回调 s
+            if (oldIsPress) {
+                const c = this.conf
+                const activeBtn = c.dragBtn.activeBtn
+                if (activeBtn === 's') {
+                    if (touchstartVArr[0] !== this.nowValue[0]) {
+                        // 触发
+                        c.finalValueChange &&
+                            c.finalValueChange(this.nowValue[0], 's')
+                    }
+                } else {
+                    if (touchstartVArr[1] !== this.nowValue[1]) {
+                        // 触发
+                        c.finalValueChange &&
+                            c.finalValueChange(this.nowValue[1], 'e')
+                    }
+                }
+            }
+
+            // 触发最终有没有修改值 的回调 e
         }
 
         this.eventObj.scroll = () => {
