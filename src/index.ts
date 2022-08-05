@@ -998,4 +998,23 @@ export default class CircleSlider {
     disable(disable: boolean = false) {
         this.conf.disable = disable
     }
+
+    // 设置当前的值
+    setNowV(v: [number, number], disableUpdate = true) {
+        const c = this.conf
+        if (c.disable && !disableUpdate) {
+            return
+        }
+        // 合法值的校验
+        if (
+            v[0] < c.dataConf.min ||
+            v[1] > c.dataConf.max ||
+            (c.coincide ? v[0] > v[1] : v[0] >= v[1])
+        ) {
+            return
+        }
+        this.nowValue[0] = v[0]
+        this.nowValue[1] = v[1]
+        this.drawAll()
+    }
 }

@@ -34,6 +34,7 @@
 <button id='addBtn'>  添加 </button>
 <button id='reduceBtn'>  减小 </button>
 <button id='setOp'>  查看left top </button>
+<button id='updateV'>修改值</button>
 
 <div style='height: 600px;'>
 
@@ -81,6 +82,7 @@
     const addBtn = document.querySelector('#addBtn')
     const reduceBtn = document.querySelector('#reduceBtn')
     const setOp = document.querySelector('#setOp')
+    const updateVBtn = document.querySelector('#updateV')
 
     addBtn.addEventListener('click', () => {
         circleSlider.incOrDecActiveNow('+')
@@ -93,6 +95,9 @@
         // circleSlider.setOption(conf)
         console.log(circleSliderEl.getBoundingClientRect())
 
+    })
+    updateVBtn.addEventListener('click', () => {
+        circleSlider.setNowV([1, 5])
     })
 
     window.addEventListener('resize', ()=> {
