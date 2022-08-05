@@ -671,7 +671,7 @@ export default class CircleSlider {
     }
 
     // 判断 dot 是否在 按钮上,  multiple 的按钮的半径倍数, 越大, 按钮的可点击范围越大
-    dotInDragBtn(dot: Coordinate, multiple = 1.5) {
+    dotInDragBtn(dot: Coordinate, multiple = 3) {
         const c = this.conf
         const r = c.dragBtn.r
         const useR = r * multiple
