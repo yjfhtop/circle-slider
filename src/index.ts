@@ -122,7 +122,13 @@ export interface Grid {
     bottom?: number
 }
 
-export type ValueInconformityType = 's>e' | 'e<s' | 'min' | 'max'
+export type ValueInconformityType =
+    | 's>e'
+    | 'e<s'
+    | 'min'
+    | 'max'
+    | 's>max'
+    | 'e<min'
 
 // 配置项
 export interface CircleSliderConf {
@@ -735,10 +741,14 @@ export default class CircleSlider {
         if (activeBtn === 's') {
             if (newV > this.nowValue[1]) {
                 return 's>e'
+            } else if (newV > c.dataConf.dragBtnSmallMax) {
+                return 's>max'
             }
         } else {
             if (newV < this.nowValue[0]) {
                 return 'e<s'
+            } else if (newV < c.dataConf.dragBtnBigMin) {
+                return 'e<min'
             }
         }
 

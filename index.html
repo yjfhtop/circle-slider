@@ -48,10 +48,10 @@
         dataConf: {
             min: 1,
             max: 12,
-            value: [1, 5],
+            value: [2, 5],
             step: 1,
             dragBtnSmallMax: 5,
-            dragBtnBigMin: 1
+            dragBtnBigMin: 2
         },
         dragBtn: {
             r: 5
@@ -65,15 +65,16 @@
         },
         disable: false,
         coincide: true,
-        // valueInconformity(type) {
-        //     console.log(type)
-        // }
+        valueInconformity(type) {
+            console.log(type, 'type')
+        },
         finalValueChange(v, type) {
             // console.log(v, type)
         },
         operationChange(v) {
             console.log(v)
-        }
+        },
+        // valueInconformity(v)
     }
     let circleSlider = new CircleSlider(document.querySelector('.c'), conf)
     console.log(circleSlider.nowValueCoordinate)
