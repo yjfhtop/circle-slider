@@ -739,17 +739,28 @@ export default class CircleSlider {
         const c = this.conf
         const activeBtn = c.dragBtn.activeBtn
         if (activeBtn === 's') {
-            if (newV > this.nowValue[1]) {
-                return 's>e'
-            } else if (newV > c.dataConf.dragBtnSmallMax) {
+            if (newV > c.dataConf.dragBtnSmallMax) {
                 return 's>max'
+            } else if (newV > this.nowValue[1]) {
+                return 's>e'
             }
+
+            // if (newV > this.nowValue[1]) {
+            //     return 's>e'
+            // } else if (newV > c.dataConf.dragBtnSmallMax) {
+            //     return 's>max'
+            // }
         } else {
-            if (newV < this.nowValue[0]) {
-                return 'e<s'
-            } else if (newV < c.dataConf.dragBtnBigMin) {
+            if (newV < c.dataConf.dragBtnBigMin) {
                 return 'e<min'
+            } else if (newV < this.nowValue[0]) {
+                return 'e<s'
             }
+            // if (newV < this.nowValue[0]) {
+            //     return 'e<s'
+            // } else if (newV < c.dataConf.dragBtnBigMin) {
+            //     return 'e<min'
+            // }
         }
 
         if (newV < c.dataConf.min) {
