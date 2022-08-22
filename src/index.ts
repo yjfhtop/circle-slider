@@ -737,30 +737,25 @@ export default class CircleSlider {
     // 判断当前是那种类型导致的不能够修改值
     getValueInconformityType(newV: number): ValueInconformityType {
         const c = this.conf
+        const coincide = c.coincide
+        // const
         const activeBtn = c.dragBtn.activeBtn
         if (activeBtn === 's') {
             if (newV > c.dataConf.dragBtnSmallMax) {
                 return 's>max'
-            } else if (newV > this.nowValue[1]) {
+            } else if (
+                coincide ? newV > this.nowValue[1] : newV >= this.nowValue[1]
+            ) {
                 return 's>e'
             }
-
-            // if (newV > this.nowValue[1]) {
-            //     return 's>e'
-            // } else if (newV > c.dataConf.dragBtnSmallMax) {
-            //     return 's>max'
-            // }
         } else {
             if (newV < c.dataConf.dragBtnBigMin) {
                 return 'e<min'
-            } else if (newV < this.nowValue[0]) {
+            } else if (
+                coincide ? newV < this.nowValue[0] : newV <= this.nowValue[0]
+            ) {
                 return 'e<s'
             }
-            // if (newV < this.nowValue[0]) {
-            //     return 'e<s'
-            // } else if (newV < c.dataConf.dragBtnBigMin) {
-            //     return 'e<min'
-            // }
         }
 
         if (newV < c.dataConf.min) {

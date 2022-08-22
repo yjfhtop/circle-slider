@@ -16,6 +16,10 @@ rollupProConfig.output = [
     {
         file: pkg.main,
         format: 'esm',
+        // 是否map文件
+        sourcemap: rollupProConfig.output.sourcemap,
+        // 文件头部
+        banner: rollupProConfig.output.banner,
     },
 ]
 
