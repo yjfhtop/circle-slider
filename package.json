@@ -1,6 +1,6 @@
 {
     "name": "yjfh-circle-slider",
-    "version": "0.0.16",
+    "version": "0.0.17",
     "description": "",
     "main": "dist/es/index.js",
     "module": "dist/umd/index.js",
