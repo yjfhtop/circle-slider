@@ -665,7 +665,7 @@ export default class CircleSlider {
                 coordinate: item.coordinate,
                 txt: item.txt,
                 fontSize: c.axisMark.fontSize,
-                drawType: 'full',
+                drawType: 'stroke',
                 drawStyle: {
                     style: c.axisMark.fontColor,
                 },
